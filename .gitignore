@@ -8,6 +8,7 @@ env/
 __pycache__/
 *.py[cod]
 .ipynb_checkpoints/
+*.egg-info/
 
 # Secrets and local config
 .env
@@ -27,4 +28,12 @@ results/tables/*
 
 # Keep directory structure visible when needed
 !.gitkeep
-
+!data/raw/.gitkeep
+!data/external/.gitkeep
+!data/processed/.gitkeep
+!data/compounds/.gitkeep
+!data/structures/.gitkeep
+!results/docking/.gitkeep
+!results/rankings/.gitkeep
+!results/figures/.gitkeep
+!results/tables/.gitkeep
