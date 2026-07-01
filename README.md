@@ -24,3 +24,7 @@ python -m venv .venv
 ```
 
 Use the virtual environment Python for all project commands on Windows.
+
+## Milestone 1: Target Feasibility
+
+The first executable milestone determines whether SpyCEP/ScpC has structures suitable for defensible docking. See `environment/setup_windows.md` for local setup and commands.
