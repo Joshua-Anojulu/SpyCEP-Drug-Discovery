@@ -14,3 +14,13 @@ The project is currently in design and feasibility planning. The approved primar
 
 See the design spec in `docs/superpowers/specs/` before implementation work.
 
+## Local Setup
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+.\.venv\Scripts\python.exe -m pytest
+```
+
+Use the virtual environment Python for all project commands on Windows.
