@@ -1,0 +1,29 @@
+PROJECT_CONTEXT.md
+
+# Local environments
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Secrets and local config
+.env
+.env.*
+*.local
+
+# Large or generated scientific artifacts
+data/raw/*
+data/external/*
+data/processed/*
+data/compounds/*
+data/structures/*
+results/docking/*
+results/rankings/*
+results/figures/*
+results/tables/*
+
+# Keep directory structure visible when needed
+!.gitkeep
+
