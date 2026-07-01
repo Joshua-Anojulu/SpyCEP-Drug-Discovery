@@ -1,0 +1,84 @@
+{
+  "project": "SpyCEP-Drug-Discovery",
+  "registry_version": "2026-07-01",
+  "targets": [
+    {
+      "target_id": "spycep_scpC",
+      "decision_role": "primary",
+      "protein_name": "Chemokine protease C / SpyCEP / ScpC",
+      "gene_name": "scpC",
+      "organism": "Streptococcus pyogenes",
+      "uniprot_accession": "Q3HV58",
+      "rationale": "Primary novelty-first anti-virulence target linked to CXC chemokine degradation and resistance to neutrophil killing.",
+      "key_references": [
+        {
+          "pmid": "18692776",
+          "note": "SpyCEP/ScpC promotes resistance to neutrophil killing."
+        }
+      ],
+      "structures": [
+        {
+          "pdb_id": "5XXZ",
+          "source": "RCSB",
+          "selection_note": "Candidate SpyCEP/ScpC structure from UniProt cross-reference."
+        },
+        {
+          "pdb_id": "5XYA",
+          "source": "RCSB",
+          "selection_note": "Candidate SpyCEP/ScpC structure from UniProt cross-reference."
+        },
+        {
+          "pdb_id": "5XYR",
+          "source": "RCSB",
+          "selection_note": "Candidate SpyCEP/ScpC structure from UniProt cross-reference."
+        },
+        {
+          "pdb_id": "7EDD",
+          "source": "RCSB",
+          "selection_note": "Candidate SpyCEP/ScpC structure from UniProt cross-reference."
+        }
+      ]
+    },
+    {
+      "target_id": "speb",
+      "decision_role": "fallback",
+      "protein_name": "Streptopain / SpeB",
+      "gene_name": "speB",
+      "organism": "Streptococcus pyogenes",
+      "uniprot_accession": "P0C0J0",
+      "rationale": "Fallback virulence target with multiple high-resolution structures and inhibitor-complex evidence.",
+      "key_references": [
+        {
+          "pmid": "26132413",
+          "note": "SpeB small-molecule inhibitor co-complex."
+        },
+        {
+          "pmid": "10681429",
+          "note": "SpeB zymogen crystal structure."
+        }
+      ],
+      "structures": [
+        {
+          "pdb_id": "1DKI",
+          "source": "RCSB",
+          "selection_note": "High-resolution zymogen form active-site mutant."
+        },
+        {
+          "pdb_id": "1PVJ",
+          "source": "RCSB",
+          "selection_note": "SpeB inhibitor-complex structure."
+        },
+        {
+          "pdb_id": "4D8B",
+          "source": "RCSB",
+          "selection_note": "High-resolution monomeric SpeB structure."
+        },
+        {
+          "pdb_id": "6UKD",
+          "source": "RCSB",
+          "selection_note": "SpeB co-complex with nitrile-based inhibitor."
+        }
+      ]
+    }
+  ]
+}
