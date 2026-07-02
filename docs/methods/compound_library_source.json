@@ -1,24 +1,783 @@
 {
   "library_version": "2026-07-02",
-  "status": "scaffold_awaiting_sourced_compounds",
-  "composition_decision": "both: custom_anti_virulence set (novelty) + fda_comparator set (benchmark)",
-  "schema": {
-    "ligand_id": "short unique slug used for filenames",
-    "name": "human-readable compound name",
-    "smiles": "canonical SMILES (must be RDKit-parseable)",
-    "compound_class": "chemical/mechanistic class",
-    "inclusion_rationale": "why this compound is in the set",
-    "source": "PMID:<id> or an http(s) URL (required provenance)",
-    "set": "custom_anti_virulence | fda_comparator",
-    "pubchem_cid": "optional PubChem CID",
-    "inchi": "optional InChI",
-    "known_target_or_mechanism": "optional",
-    "safety_caveat": "optional"
+  "status": "sourced_from_pubchem_awaiting_user_approval",
+  "composition_decision": "both: custom_anti_virulence + fda_comparator",
+  "source_of_structures": "PubChem PUG REST (SMILES + CID)",
+  "resolved_counts_by_set": {
+    "custom_anti_virulence": 22,
+    "fda_comparator": 55
   },
-  "notes": [
-    "Compounds must be sourced from real literature/databases with verifiable provenance.",
-    "Do NOT add compounds with invented SMILES, CIDs, or citations.",
-    "Populate this file, then run scripts/curate_compounds.py to validate before docking."
-  ],
-  "compounds": []
+  "dropped_names": [],
+  "compounds": [
+    {
+      "ligand_id": "benzamidine",
+      "name": "benzamidine",
+      "smiles": "C1=CC=C(C=C1)C(=N)N",
+      "pubchem_cid": 2332,
+      "compound_class": "aryl amidine",
+      "inclusion_rationale": "canonical S1-pocket serine-protease binder; probes the SpyCEP substrate groove",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/2332",
+      "set": "custom_anti_virulence"
+    },
+    {
+      "ligand_id": "4_aminobenzamidine",
+      "name": "4-aminobenzamidine",
+      "smiles": "C1=CC(=CC=C1C(=N)N)N",
+      "pubchem_cid": 1725,
+      "compound_class": "aryl amidine",
+      "inclusion_rationale": "amidine S1 binder variant",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/1725",
+      "set": "custom_anti_virulence"
+    },
+    {
+      "ligand_id": "pentamidine",
+      "name": "pentamidine",
+      "smiles": "C1=CC(=CC=C1C(=N)N)OCCCCCOC2=CC=C(C=C2)C(=N)N",
+      "pubchem_cid": 4735,
+      "compound_class": "bis-aryl amidine",
+      "inclusion_rationale": "extended bis-amidine protease/groove binder",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/4735",
+      "set": "custom_anti_virulence"
+    },
+    {
+      "ligand_id": "diminazene",
+      "name": "diminazene",
+      "smiles": "C1=CC(=CC=C1C(=N)N)NN=NC2=CC=C(C=C2)C(=N)N",
+      "pubchem_cid": 2354,
+      "compound_class": "bis-aryl amidine",
+      "inclusion_rationale": "bis-amidine motif for the substrate groove",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/2354",
+      "set": "custom_anti_virulence"
+    },
+    {
+      "ligand_id": "leupeptin",
+      "name": "leupeptin",
+      "smiles": "CC(C)C[C@@H](C(=O)N[C@@H](CC(C)C)C(=O)N[C@@H](CCCN=C(N)N)C=O)NC(=O)C",
+      "pubchem_cid": 72429,
+      "compound_class": "peptide aldehyde",
+      "inclusion_rationale": "reversible serine/cysteine protease inhibitor",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/72429",
+      "set": "custom_anti_virulence"
+    },
+    {
+      "ligand_id": "antipain",
+      "name": "antipain",
+      "smiles": "CC(C)[C@@H](C(=O)N[C@@H](CCCN=C(N)N)C=O)NC(=O)[C@H](CCCN=C(N)N)NC(=O)N[C@@H](CC1=CC=CC=C1)C(=O)O",
+      "pubchem_cid": 37817,
+      "compound_class": "peptide aldehyde",
+      "inclusion_rationale": "serine/cysteine protease inhibitor chemotype",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/37817",
+      "set": "custom_anti_virulence"
+    },
+    {
+      "ligand_id": "chymostatin",
+      "name": "chymostatin",
+      "smiles": "CC(C)C[C@@H](C(=O)N[C@@H](CC1=CC=CC=C1)C=O)NC(=O)[C@H](C2CCN=C(N2)N)NC(=O)N[C@@H](CC3=CC=CC=C3)C(=O)O",
+      "pubchem_cid": 443119,
+      "compound_class": "peptide aldehyde",
+      "inclusion_rationale": "chymotrypsin-like serine protease inhibitor",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/443119",
+      "set": "custom_anti_virulence"
+    },
+    {
+      "ligand_id": "elastatinal",
+      "name": "elastatinal",
+      "smiles": "C[C@@H](C=O)NC(=O)[C@H](CCC(=O)N)NC(=O)[C@H]([C@@H]1CCNC(=N1)N)NC(=O)N[C@@H](CC(C)C)C(=O)O",
+      "pubchem_cid": 135445720,
+      "compound_class": "peptide aldehyde",
+      "inclusion_rationale": "elastase-type serine protease inhibitor",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/135445720",
+      "set": "custom_anti_virulence"
+    },
+    {
+      "ligand_id": "aebsf",
+      "name": "AEBSF",
+      "smiles": "C1=CC(=CC=C1CCN)S(=O)(=O)F.Cl",
+      "pubchem_cid": 186136,
+      "compound_class": "sulfonyl fluoride",
+      "inclusion_rationale": "irreversible active-site serine sulfonylating inhibitor",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/186136",
+      "set": "custom_anti_virulence"
+    },
+    {
+      "ligand_id": "pmsf",
+      "name": "phenylmethylsulfonyl fluoride",
+      "smiles": "C1=CC=C(C=C1)CS(=O)(=O)F",
+      "pubchem_cid": 4784,
+      "compound_class": "sulfonyl fluoride",
+      "inclusion_rationale": "classic serine-protease active-site inhibitor",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/4784",
+      "set": "custom_anti_virulence"
+    },
+    {
+      "ligand_id": "apmsf",
+      "name": "4-amidinophenylmethanesulfonyl fluoride",
+      "smiles": "C1=CC(=CC=C1CS(=O)(=O)F)C(=N)N",
+      "pubchem_cid": 1719,
+      "compound_class": "sulfonyl fluoride amidine",
+      "inclusion_rationale": "amidine + sulfonyl-fluoride dual serine-protease motif",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/1719",
+      "set": "custom_anti_virulence"
+    },
+    {
+      "ligand_id": "tpck",
+      "name": "TPCK",
+      "smiles": "CC1=CC=C(C=C1)S(=O)(=O)N[C@@H](CC2=CC=CC=C2)C(=O)CCl",
+      "pubchem_cid": 439647,
+      "compound_class": "chloromethyl ketone",
+      "inclusion_rationale": "chymotrypsin-like mechanism-based inhibitor",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/439647",
+      "set": "custom_anti_virulence"
+    },
+    {
+      "ligand_id": "tlck",
+      "name": "TLCK",
+      "smiles": "CC1=CC=C(C=C1)S(=O)(=O)N[C@@H](CCCCN)C(=O)CCl",
+      "pubchem_cid": 73094,
+      "compound_class": "chloromethyl ketone",
+      "inclusion_rationale": "trypsin-like mechanism-based inhibitor",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/73094",
+      "set": "custom_anti_virulence"
+    },
+    {
+      "ligand_id": "dci",
+      "name": "3,4-dichloroisocoumarin",
+      "smiles": "C1=CC=C2C(=C1)C(=C(OC2=O)Cl)Cl",
+      "pubchem_cid": 1609,
+      "compound_class": "isocoumarin",
+      "inclusion_rationale": "general mechanism-based serine protease inhibitor",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/1609",
+      "set": "custom_anti_virulence"
+    },
+    {
+      "ligand_id": "phenylboronic_acid",
+      "name": "phenylboronic acid",
+      "smiles": "B(C1=CC=CC=C1)(O)O",
+      "pubchem_cid": 66827,
+      "compound_class": "boronic acid",
+      "inclusion_rationale": "reversible covalent serine-protease boronate chemotype",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/66827",
+      "set": "custom_anti_virulence"
+    },
+    {
+      "ligand_id": "4_carboxyphenylboronic_acid",
+      "name": "4-carboxyphenylboronic acid",
+      "smiles": "B(C1=CC=C(C=C1)C(=O)O)(O)O",
+      "pubchem_cid": 312183,
+      "compound_class": "boronic acid",
+      "inclusion_rationale": "boronate chemotype variant",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/312183",
+      "set": "custom_anti_virulence"
+    },
+    {
+      "ligand_id": "4_guanidinobenzoic_acid",
+      "name": "4-guanidinobenzoic acid",
+      "smiles": "C1=CC(=CC=C1C(=O)O)N=C(N)N",
+      "pubchem_cid": 159772,
+      "compound_class": "guanidinobenzoate",
+      "inclusion_rationale": "guanidinobenzoate ester-mimetic serine-protease motif",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/159772",
+      "set": "custom_anti_virulence"
+    },
+    {
+      "ligand_id": "bortezomib",
+      "name": "bortezomib",
+      "smiles": "B([C@H](CC(C)C)NC(=O)[C@H](CC1=CC=CC=C1)NC(=O)C2=NC=CN=C2)(O)O",
+      "pubchem_cid": 387447,
+      "compound_class": "boronic acid",
+      "inclusion_rationale": "peptide boronic-acid protease inhibitor scaffold",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/387447",
+      "set": "custom_anti_virulence"
+    },
+    {
+      "ligand_id": "ixazomib",
+      "name": "ixazomib",
+      "smiles": "B([C@H](CC(C)C)NC(=O)CNC(=O)C1=C(C=CC(=C1)Cl)Cl)(O)O",
+      "pubchem_cid": 25183872,
+      "compound_class": "boronic acid",
+      "inclusion_rationale": "boronic-acid protease inhibitor scaffold",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/25183872",
+      "set": "custom_anti_virulence"
+    },
+    {
+      "ligand_id": "melagatran",
+      "name": "melagatran",
+      "smiles": "C1CCC(CC1)[C@H](C(=O)N2CC[C@H]2C(=O)NCC3=CC=C(C=C3)C(=N)N)NCC(=O)O",
+      "pubchem_cid": 183797,
+      "compound_class": "benzamidine peptidomimetic",
+      "inclusion_rationale": "benzamidine-based serine-protease (thrombin) inhibitor",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/183797",
+      "set": "custom_anti_virulence"
+    },
+    {
+      "ligand_id": "ccg_2979",
+      "name": "CCG-2979",
+      "smiles": "CCCCSC1=NC2=C(C(=O)N1CC=C)C3(CCCCC3)CC4=CC=CC=C42",
+      "pubchem_cid": 1602323,
+      "compound_class": "anti-virulence lead",
+      "inclusion_rationale": "GAS streptokinase-expression inhibitor (anti-virulence hit)",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/1602323",
+      "set": "custom_anti_virulence"
+    },
+    {
+      "ligand_id": "ccg_102487",
+      "name": "CCG-102487",
+      "smiles": "C=CCN1C(=O)C2=C(C3=CC=CC=C3CC24CCCCC4)N=C1SCC5=CC=CC=C5",
+      "pubchem_cid": 1581910,
+      "compound_class": "anti-virulence lead",
+      "inclusion_rationale": "analog of GAS streptokinase-expression inhibitor CCG-2979",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/1581910",
+      "set": "custom_anti_virulence"
+    },
+    {
+      "ligand_id": "penicillin_g",
+      "name": "penicillin G",
+      "smiles": "CC1([C@@H](N2[C@H](S1)[C@@H](C2=O)NC(=O)CC3=CC=CC=C3)C(=O)O)C",
+      "pubchem_cid": 5904,
+      "compound_class": "beta-lactam antibiotic",
+      "inclusion_rationale": "first-line anti-GAS antibiotic; clinical comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/5904",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "amoxicillin",
+      "name": "amoxicillin",
+      "smiles": "CC1([C@@H](N2[C@H](S1)[C@@H](C2=O)NC(=O)[C@@H](C3=CC=C(C=C3)O)N)C(=O)O)C",
+      "pubchem_cid": 33613,
+      "compound_class": "beta-lactam antibiotic",
+      "inclusion_rationale": "common anti-GAS antibiotic",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/33613",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "ampicillin",
+      "name": "ampicillin",
+      "smiles": "CC1([C@@H](N2[C@H](S1)[C@@H](C2=O)NC(=O)[C@@H](C3=CC=CC=C3)N)C(=O)O)C",
+      "pubchem_cid": 6249,
+      "compound_class": "beta-lactam antibiotic",
+      "inclusion_rationale": "beta-lactam comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/6249",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "cephalexin",
+      "name": "cephalexin",
+      "smiles": "CC1=C(N2[C@@H]([C@@H](C2=O)NC(=O)[C@@H](C3=CC=CC=C3)N)SC1)C(=O)O",
+      "pubchem_cid": 27447,
+      "compound_class": "cephalosporin",
+      "inclusion_rationale": "cephalosporin comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/27447",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "clindamycin",
+      "name": "clindamycin",
+      "smiles": "CCC[C@@H]1C[C@H](N(C1)C)C(=O)N[C@@H]([C@@H]2[C@@H]([C@@H]([C@H]([C@H](O2)SC)O)O)O)[C@H](C)Cl",
+      "pubchem_cid": 446598,
+      "compound_class": "lincosamide",
+      "inclusion_rationale": "adjunct anti-toxin therapy in invasive GAS",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/446598",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "azithromycin",
+      "name": "azithromycin",
+      "smiles": "CC[C@@H]1[C@@]([C@@H]([C@H](N(C[C@@H](C[C@@]([C@@H]([C@H]([C@@H]([C@H](C(=O)O1)C)O[C@H]2C[C@@]([C@H]([C@@H](O2)C)O)(C)OC)C)O[C@H]3[C@@H]([C@H](C[C@H](O3)C)N(C)C)O)(C)O)C)C)C)O)(C)O",
+      "pubchem_cid": 447043,
+      "compound_class": "macrolide",
+      "inclusion_rationale": "macrolide comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/447043",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "erythromycin",
+      "name": "erythromycin",
+      "smiles": "CC[C@@H]1[C@@]([C@@H]([C@H](C(=O)[C@@H](C[C@@]([C@@H]([C@H]([C@@H]([C@H](C(=O)O1)C)O[C@H]2C[C@@]([C@H]([C@@H](O2)C)O)(C)OC)C)O[C@H]3[C@@H]([C@H](C[C@H](O3)C)N(C)C)O)(C)O)C)C)O)(C)O",
+      "pubchem_cid": 12560,
+      "compound_class": "macrolide",
+      "inclusion_rationale": "macrolide comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/12560",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "vancomycin",
+      "name": "vancomycin",
+      "smiles": "C[C@H]1[C@H]([C@@](C[C@@H](O1)O[C@@H]2[C@H]([C@@H]([C@H](O[C@H]2OC3=C4C=C5C=C3OC6=C(C=C(C=C6)[C@H]([C@H](C(=O)N[C@H](C(=O)N[C@H]5C(=O)N[C@@H]7C8=CC(=C(C=C8)O)C9=C(C=C(C=C9O)O)[C@H](NC(=O)[C@H]([C@@H](C1=CC(=C(O4)C=C1)Cl)O)NC7=O)C(=O)O)CC(=O)N)NC(=O)[C@@H](CC(C)C)NC)O)Cl)CO)O)O)(C)N)O",
+      "pubchem_cid": 14969,
+      "compound_class": "glycopeptide",
+      "inclusion_rationale": "gram-positive antibiotic comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/14969",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "linezolid",
+      "name": "linezolid",
+      "smiles": "CC(=O)NC[C@H]1CN(C(=O)O1)C2=CC(=C(C=C2)N3CCOCC3)F",
+      "pubchem_cid": 441401,
+      "compound_class": "oxazolidinone",
+      "inclusion_rationale": "gram-positive antibiotic comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/441401",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "doxycycline",
+      "name": "doxycycline",
+      "smiles": "C[C@@H]1[C@H]2[C@@H]([C@H]3[C@@H](C(=O)C(=C([C@]3(C(=O)C2=C(C4=C1C=CC=C4O)O)O)O)C(=O)N)N(C)C)O",
+      "pubchem_cid": 54671203,
+      "compound_class": "tetracycline",
+      "inclusion_rationale": "broad-spectrum comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/54671203",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "nafamostat",
+      "name": "nafamostat",
+      "smiles": "C1=CC(=CC=C1C(=O)OC2=CC3=C(C=C2)C=C(C=C3)C(=N)N)N=C(N)N",
+      "pubchem_cid": 4413,
+      "compound_class": "approved serine protease inhibitor",
+      "inclusion_rationale": "approved synthetic serine-protease inhibitor drug",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/4413",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "camostat",
+      "name": "camostat",
+      "smiles": "CN(C)C(=O)COC(=O)CC1=CC=C(C=C1)OC(=O)C2=CC=C(C=C2)N=C(N)N",
+      "pubchem_cid": 2536,
+      "compound_class": "approved serine protease inhibitor",
+      "inclusion_rationale": "approved synthetic serine-protease inhibitor drug",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/2536",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "gabexate",
+      "name": "gabexate",
+      "smiles": "CCOC(=O)C1=CC=C(C=C1)OC(=O)CCCCCN=C(N)N",
+      "pubchem_cid": 3447,
+      "compound_class": "approved serine protease inhibitor",
+      "inclusion_rationale": "approved synthetic serine-protease inhibitor drug",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/3447",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "argatroban",
+      "name": "argatroban",
+      "smiles": "C[C@@H]1CCN([C@H](C1)C(=O)O)C(=O)[C@H](CCCN=C(N)N)NS(=O)(=O)C2=CC=CC3=C2NCC(C3)C",
+      "pubchem_cid": 92722,
+      "compound_class": "approved serine protease inhibitor",
+      "inclusion_rationale": "approved arginine-based thrombin inhibitor",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/92722",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "dabigatran",
+      "name": "dabigatran",
+      "smiles": "CN1C2=C(C=C(C=C2)C(=O)N(CCC(=O)O)C3=CC=CC=N3)N=C1CNC4=CC=C(C=C4)C(=N)N",
+      "pubchem_cid": 216210,
+      "compound_class": "approved serine protease inhibitor",
+      "inclusion_rationale": "approved benzamidine-type thrombin inhibitor",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/216210",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "sivelestat",
+      "name": "sivelestat",
+      "smiles": "CC(C)(C)C(=O)OC1=CC=C(C=C1)S(=O)(=O)NC2=CC=CC=C2C(=O)NCC(=O)O",
+      "pubchem_cid": 107706,
+      "compound_class": "approved serine protease inhibitor",
+      "inclusion_rationale": "approved neutrophil elastase inhibitor",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/107706",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "ritonavir",
+      "name": "ritonavir",
+      "smiles": "CC(C)C1=NC(=CS1)CN(C)C(=O)N[C@@H](C(C)C)C(=O)N[C@@H](CC2=CC=CC=C2)C[C@@H]([C@H](CC3=CC=CC=C3)NC(=O)OCC4=CN=CS4)O",
+      "pubchem_cid": 392622,
+      "compound_class": "approved protease inhibitor",
+      "inclusion_rationale": "approved viral protease inhibitor; large-scaffold comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/392622",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "aspirin",
+      "name": "aspirin",
+      "smiles": "CC(=O)OC1=CC=CC=C1C(=O)O",
+      "pubchem_cid": 2244,
+      "compound_class": "NSAID",
+      "inclusion_rationale": "common-drug repurposing comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/2244",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "ibuprofen",
+      "name": "ibuprofen",
+      "smiles": "CC(C)CC1=CC=C(C=C1)C(C)C(=O)O",
+      "pubchem_cid": 3672,
+      "compound_class": "NSAID",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/3672",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "naproxen",
+      "name": "naproxen",
+      "smiles": "C[C@@H](C1=CC2=C(C=C1)C=C(C=C2)OC)C(=O)O",
+      "pubchem_cid": 156391,
+      "compound_class": "NSAID",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/156391",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "acetaminophen",
+      "name": "acetaminophen",
+      "smiles": "CC(=O)NC1=CC=C(C=C1)O",
+      "pubchem_cid": 1983,
+      "compound_class": "analgesic",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/1983",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "metformin",
+      "name": "metformin",
+      "smiles": "CN(C)C(=N)N=C(N)N",
+      "pubchem_cid": 4091,
+      "compound_class": "biguanide",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/4091",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "atorvastatin",
+      "name": "atorvastatin",
+      "smiles": "CC(C)C1=C(C(=C(N1CC[C@H](C[C@H](CC(=O)O)O)O)C2=CC=C(C=C2)F)C3=CC=CC=C3)C(=O)NC4=CC=CC=C4",
+      "pubchem_cid": 60823,
+      "compound_class": "statin",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/60823",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "simvastatin",
+      "name": "simvastatin",
+      "smiles": "CCC(C)(C)C(=O)O[C@H]1C[C@H](C=C2[C@H]1[C@H]([C@H](C=C2)C)CC[C@@H]3C[C@H](CC(=O)O3)O)C",
+      "pubchem_cid": 54454,
+      "compound_class": "statin",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/54454",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "omeprazole",
+      "name": "omeprazole",
+      "smiles": "CC1=CN=C(C(=C1OC)C)CS(=O)C2=NC3=C(N2)C=C(C=C3)OC",
+      "pubchem_cid": 4594,
+      "compound_class": "proton pump inhibitor",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/4594",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "warfarin",
+      "name": "warfarin",
+      "smiles": "CC(=O)CC(C1=CC=CC=C1)C2=C(C3=CC=CC=C3OC2=O)O",
+      "pubchem_cid": 54678486,
+      "compound_class": "anticoagulant",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/54678486",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "furosemide",
+      "name": "furosemide",
+      "smiles": "C1=COC(=C1)CNC2=CC(=C(C=C2C(=O)O)S(=O)(=O)N)Cl",
+      "pubchem_cid": 3440,
+      "compound_class": "diuretic",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/3440",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "lisinopril",
+      "name": "lisinopril",
+      "smiles": "C1C[C@H](N(C1)C(=O)[C@H](CCCCN)N[C@@H](CCC2=CC=CC=C2)C(=O)O)C(=O)O",
+      "pubchem_cid": 5362119,
+      "compound_class": "ACE inhibitor",
+      "inclusion_rationale": "peptidomimetic protease-inhibitor drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/5362119",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "losartan",
+      "name": "losartan",
+      "smiles": "CCCCC1=NC(=C(N1CC2=CC=C(C=C2)C3=CC=CC=C3C4=NNN=N4)CO)Cl",
+      "pubchem_cid": 3961,
+      "compound_class": "ARB",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/3961",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "metoprolol",
+      "name": "metoprolol",
+      "smiles": "CC(C)NCC(COC1=CC=C(C=C1)CCOC)O",
+      "pubchem_cid": 4171,
+      "compound_class": "beta blocker",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/4171",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "amlodipine",
+      "name": "amlodipine",
+      "smiles": "CCOC(=O)C1=C(NC(=C(C1C2=CC=CC=C2Cl)C(=O)OC)C)COCCN",
+      "pubchem_cid": 2162,
+      "compound_class": "calcium channel blocker",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/2162",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "hydrochlorothiazide",
+      "name": "hydrochlorothiazide",
+      "smiles": "C1NC2=CC(=C(C=C2S(=O)(=O)N1)S(=O)(=O)N)Cl",
+      "pubchem_cid": 3639,
+      "compound_class": "diuretic",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/3639",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "sertraline",
+      "name": "sertraline",
+      "smiles": "CN[C@H]1CC[C@H](C2=CC=CC=C12)C3=CC(=C(C=C3)Cl)Cl",
+      "pubchem_cid": 68617,
+      "compound_class": "SSRI",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/68617",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "fluoxetine",
+      "name": "fluoxetine",
+      "smiles": "CNCCC(C1=CC=CC=C1)OC2=CC=C(C=C2)C(F)(F)F",
+      "pubchem_cid": 3386,
+      "compound_class": "SSRI",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/3386",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "gabapentin",
+      "name": "gabapentin",
+      "smiles": "C1CCC(CC1)(CC(=O)O)CN",
+      "pubchem_cid": 3446,
+      "compound_class": "anticonvulsant",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/3446",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "prednisone",
+      "name": "prednisone",
+      "smiles": "C[C@]12CC(=O)[C@H]3[C@H]([C@@H]1CC[C@@]2(C(=O)CO)O)CCC4=CC(=O)C=C[C@]34C",
+      "pubchem_cid": 5865,
+      "compound_class": "corticosteroid",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/5865",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "dexamethasone",
+      "name": "dexamethasone",
+      "smiles": "C[C@@H]1C[C@H]2[C@@H]3CCC4=CC(=O)C=C[C@@]4([C@]3([C@H](C[C@@]2([C@]1(C(=O)CO)O)C)O)F)C",
+      "pubchem_cid": 5743,
+      "compound_class": "corticosteroid",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/5743",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "ciprofloxacin",
+      "name": "ciprofloxacin",
+      "smiles": "C1CC1N2C=C(C(=O)C3=CC(=C(C=C32)N4CCNCC4)F)C(=O)O",
+      "pubchem_cid": 2764,
+      "compound_class": "fluoroquinolone",
+      "inclusion_rationale": "antibiotic comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/2764",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "levofloxacin",
+      "name": "levofloxacin",
+      "smiles": "C[C@H]1COC2=C3N1C=C(C(=O)C3=CC(=C2N4CCN(CC4)C)F)C(=O)O",
+      "pubchem_cid": 149096,
+      "compound_class": "fluoroquinolone",
+      "inclusion_rationale": "antibiotic comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/149096",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "fluconazole",
+      "name": "fluconazole",
+      "smiles": "C1=CC(=C(C=C1F)F)C(CN2C=NC=N2)(CN3C=NC=N3)O",
+      "pubchem_cid": 3365,
+      "compound_class": "antifungal",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/3365",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "acyclovir",
+      "name": "acyclovir",
+      "smiles": "C1=NC2=C(N1COCCO)N=C(NC2=O)N",
+      "pubchem_cid": 135398513,
+      "compound_class": "antiviral",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/135398513",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "loratadine",
+      "name": "loratadine",
+      "smiles": "CCOC(=O)N1CCC(=C2C3=C(CCC4=C2N=CC=C4)C=C(C=C3)Cl)CC1",
+      "pubchem_cid": 3957,
+      "compound_class": "antihistamine",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/3957",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "diphenhydramine",
+      "name": "diphenhydramine",
+      "smiles": "CN(C)CCOC(C1=CC=CC=C1)C2=CC=CC=C2",
+      "pubchem_cid": 3100,
+      "compound_class": "antihistamine",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/3100",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "montelukast",
+      "name": "montelukast",
+      "smiles": "CC(C)(C1=CC=CC=C1CC[C@H](C2=CC=CC(=C2)/C=C/C3=NC4=C(C=CC(=C4)Cl)C=C3)SCC5(CC5)CC(=O)O)O",
+      "pubchem_cid": 5281040,
+      "compound_class": "leukotriene antagonist",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/5281040",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "allopurinol",
+      "name": "allopurinol",
+      "smiles": "C1=NNC2=C1C(=O)NC=N2",
+      "pubchem_cid": 135401907,
+      "compound_class": "xanthine oxidase inhibitor",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/135401907",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "colchicine",
+      "name": "colchicine",
+      "smiles": "CC(=O)N[C@H]1CCC2=CC(=C(C(=C2C3=CC=C(C(=O)C=C13)OC)OC)OC)OC",
+      "pubchem_cid": 6167,
+      "compound_class": "anti-inflammatory",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/6167",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "methotrexate",
+      "name": "methotrexate",
+      "smiles": "CN(CC1=CN=C2C(=N1)C(=NC(=N2)N)N)C3=CC=C(C=C3)C(=O)N[C@@H](CCC(=O)O)C(=O)O",
+      "pubchem_cid": 126941,
+      "compound_class": "antimetabolite",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/126941",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "sildenafil",
+      "name": "sildenafil",
+      "smiles": "CCCC1=NN(C2=C1N=C(NC2=O)C3=C(C=CC(=C3)S(=O)(=O)N4CCN(CC4)C)OCC)C",
+      "pubchem_cid": 135398744,
+      "compound_class": "PDE5 inhibitor",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/135398744",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "caffeine",
+      "name": "caffeine",
+      "smiles": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",
+      "pubchem_cid": 2519,
+      "compound_class": "xanthine",
+      "inclusion_rationale": "small neutral comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/2519",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "atropine",
+      "name": "atropine",
+      "smiles": "CN1[C@@H]2CC[C@H]1CC(C2)OC(=O)C(CO)C3=CC=CC=C3",
+      "pubchem_cid": 174174,
+      "compound_class": "anticholinergic",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/174174",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "morphine",
+      "name": "morphine",
+      "smiles": "CN1CC[C@]23[C@@H]4[C@H]1CC5=C2C(=C(C=C5)O)O[C@H]3[C@H](C=C4)O",
+      "pubchem_cid": 5288826,
+      "compound_class": "opioid",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/5288826",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "propranolol",
+      "name": "propranolol",
+      "smiles": "CC(C)NCC(COC1=CC=CC2=CC=CC=C21)O",
+      "pubchem_cid": 4946,
+      "compound_class": "beta blocker",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/4946",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "ranitidine",
+      "name": "ranitidine",
+      "smiles": "CN/C(=C\\[N+](=O)[O-])/NCCSCC1=CC=C(O1)CN(C)C",
+      "pubchem_cid": 3001055,
+      "compound_class": "H2 antagonist",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/3001055",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "diclofenac",
+      "name": "diclofenac",
+      "smiles": "C1=CC=C(C(=C1)CC(=O)O)NC2=C(C=CC=C2Cl)Cl",
+      "pubchem_cid": 3033,
+      "compound_class": "NSAID",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/3033",
+      "set": "fda_comparator"
+    },
+    {
+      "ligand_id": "celecoxib",
+      "name": "celecoxib",
+      "smiles": "CC1=CC=C(C=C1)C2=CC(=NN2C3=CC=C(C=C3)S(=O)(=O)N)C(F)(F)F",
+      "pubchem_cid": 2662,
+      "compound_class": "COX-2 inhibitor",
+      "inclusion_rationale": "common-drug comparator",
+      "source": "https://pubchem.ncbi.nlm.nih.gov/compound/2662",
+      "set": "fda_comparator"
+    }
+  ]
 }
