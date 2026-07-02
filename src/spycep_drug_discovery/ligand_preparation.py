@@ -15,6 +15,16 @@ class LigandPreparationError(RuntimeError):
     """Raised when a ligand cannot be embedded or converted to PDBQT."""
 
 
+def _largest_fragment(mol):
+    """Return the largest fragment by heavy-atom count, stripping salts/counterions."""
+    from rdkit import Chem
+
+    fragments = Chem.GetMolFrags(mol, asMols=True, sanitizeFrags=True)
+    if len(fragments) <= 1:
+        return mol
+    return max(fragments, key=lambda fragment: fragment.GetNumHeavyAtoms())
+
+
 def smiles_to_sdf(smiles: str, out_sdf: Path, *, seed: int = EMBED_SEED) -> int:
     """Embed a single deterministic 3D conformer and write it as SDF. Returns atom count."""
     from rdkit import Chem
@@ -23,6 +33,7 @@ def smiles_to_sdf(smiles: str, out_sdf: Path, *, seed: int = EMBED_SEED) -> int:
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
         raise LigandPreparationError(f"RDKit could not parse SMILES: {smiles!r}")
+    mol = _largest_fragment(mol)
     mol = Chem.AddHs(mol)
     params = AllChem.ETKDGv3()
     params.randomSeed = seed
@@ -42,7 +53,7 @@ def heavy_atom_count(smiles: str) -> int:
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
         raise LigandPreparationError(f"RDKit could not parse SMILES: {smiles!r}")
-    return mol.GetNumHeavyAtoms()
+    return _largest_fragment(mol).GetNumHeavyAtoms()
 
 
 def prepare_ligand(

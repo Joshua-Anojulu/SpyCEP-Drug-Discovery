@@ -2,9 +2,25 @@ import pytest
 
 from spycep_drug_discovery.ligand_preparation import (
     LigandPreparationError,
+    heavy_atom_count,
     prepare_ligand,
     smiles_to_sdf,
 )
+
+
+def test_heavy_atom_count_strips_salts():
+    # ethylamine hydrochloride: organic fragment has 3 heavy atoms, chloride is dropped.
+    assert heavy_atom_count("CCN.Cl") == 3
+
+
+def test_smiles_to_sdf_desalts_before_embedding(tmp_path):
+    out = tmp_path / "salt.sdf"
+
+    # 17 atoms for benzamidine (incl H); the chloride counterion must not appear.
+    count = smiles_to_sdf("NC(=N)c1ccccc1.Cl", out, seed=42)
+
+    assert count == 17
+    assert "Cl" not in out.read_text()
 
 
 def test_smiles_to_sdf_is_deterministic(tmp_path):
