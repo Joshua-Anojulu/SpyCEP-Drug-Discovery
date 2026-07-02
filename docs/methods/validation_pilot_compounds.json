@@ -1,0 +1,14 @@
+{
+  "pilot_version": "2026-07-02",
+  "purpose": "Throwaway pipeline-validation set. NOT the curated research library. Used only to confirm the ligand-prep -> Vina docking pipeline runs end-to-end and is reproducible against the 5XYA + 7EDD receptor ensemble before real compound curation is approved.",
+  "caveats": [
+    "Raw AutoDock Vina scores are size/scale biased; this set is not a rigorous hit-discrimination benchmark.",
+    "Positive-control motifs (aryl amidines) engage serine-protease pockets generally, not SpyCEP specifically."
+  ],
+  "compounds": [
+    {"ligand_id": "benzamidine", "smiles": "NC(=N)c1ccccc1", "role": "positive", "note": "classic serine-protease S1 amidine binder"},
+    {"ligand_id": "4_aminobenzamidine", "smiles": "NC(=N)c1ccc(N)cc1", "role": "positive", "note": "aryl amidine protease-pocket motif"},
+    {"ligand_id": "caffeine", "smiles": "Cn1cnc2n(C)c(=O)n(C)c(=O)c12", "role": "decoy", "note": "common drug, no protease-targeting motif"},
+    {"ligand_id": "ibuprofen", "smiles": "CC(C)Cc1ccc(cc1)C(C)C(=O)O", "role": "decoy", "note": "NSAID, no protease-targeting motif"}
+  ]
+}

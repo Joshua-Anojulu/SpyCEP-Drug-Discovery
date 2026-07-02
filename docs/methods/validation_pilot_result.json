@@ -1,0 +1,127 @@
+{
+  "pilot_version": "2026-07-02",
+  "status": "pipeline_validation_only_not_hit_discovery",
+  "seed": 42,
+  "exhaustiveness": 8,
+  "num_modes": 9,
+  "vina_version": "AutoDock Vina v1.2.7",
+  "receptor_ensemble": [
+    "spycep_5xya_aes_active_site",
+    "spycep_7edd_native_active_site"
+  ],
+  "reproducibility_check": {
+    "ligand_id": "benzamidine",
+    "pocket_id": "spycep_5xya_aes_active_site",
+    "first_run_best": -4.897,
+    "repeat_run_best": -4.897,
+    "deterministic": true
+  },
+  "ligands": [
+    {
+      "ligand_id": "benzamidine",
+      "smiles": "NC(=N)c1ccccc1",
+      "role": "positive",
+      "embed_seed": 42,
+      "heavy_atom_count": 9,
+      "sdf_atom_count": 17,
+      "pdbqt_path": "data/compounds/pdbqt/benzamidine.pdbqt",
+      "pdbqt_sha256": "fe30449df7cd12bebe83ea751456daa09830a26d2306b064c63a8d682d0a8663",
+      "pdbqt_atom_records": 12
+    },
+    {
+      "ligand_id": "4_aminobenzamidine",
+      "smiles": "NC(=N)c1ccc(N)cc1",
+      "role": "positive",
+      "embed_seed": 42,
+      "heavy_atom_count": 10,
+      "sdf_atom_count": 19,
+      "pdbqt_path": "data/compounds/pdbqt/4_aminobenzamidine.pdbqt",
+      "pdbqt_sha256": "be1de0e984f25f2c046bf5242e011db44e3bba2062110cbfc646d70f89042188",
+      "pdbqt_atom_records": 15
+    },
+    {
+      "ligand_id": "caffeine",
+      "smiles": "Cn1cnc2n(C)c(=O)n(C)c(=O)c12",
+      "role": "decoy",
+      "embed_seed": 42,
+      "heavy_atom_count": 14,
+      "sdf_atom_count": 24,
+      "pdbqt_path": "data/compounds/pdbqt/caffeine.pdbqt",
+      "pdbqt_sha256": "4ecbe7c49174b16ecf0b2d6095e3b355340e25f7108deca7cecd95e016063fea",
+      "pdbqt_atom_records": 14
+    },
+    {
+      "ligand_id": "ibuprofen",
+      "smiles": "CC(C)Cc1ccc(cc1)C(C)C(=O)O",
+      "role": "decoy",
+      "embed_seed": 42,
+      "heavy_atom_count": 15,
+      "sdf_atom_count": 33,
+      "pdbqt_path": "data/compounds/pdbqt/ibuprofen.pdbqt",
+      "pdbqt_sha256": "6f39a6ef69c931626073bd7d18b9a5f9318a84300b28375da460199a1cbf9bba",
+      "pdbqt_atom_records": 16
+    }
+  ],
+  "ranking": [
+    {
+      "ligand_id": "benzamidine",
+      "role": "positive",
+      "heavy_atom_count": 9,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -4.897,
+        "spycep_7edd_native_active_site": -4.603
+      },
+      "ensemble_best_affinity_kcal_mol": -4.897,
+      "ensemble_mean_affinity_kcal_mol": -4.75,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.5441111111111111,
+      "receptor_count": 2,
+      "rank_by_affinity": 3,
+      "rank": 1
+    },
+    {
+      "ligand_id": "4_aminobenzamidine",
+      "role": "positive",
+      "heavy_atom_count": 10,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -4.748,
+        "spycep_7edd_native_active_site": -4.624
+      },
+      "ensemble_best_affinity_kcal_mol": -4.748,
+      "ensemble_mean_affinity_kcal_mol": -4.686,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.4748,
+      "receptor_count": 2,
+      "rank_by_affinity": 4,
+      "rank": 2
+    },
+    {
+      "ligand_id": "ibuprofen",
+      "role": "decoy",
+      "heavy_atom_count": 15,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.227,
+        "spycep_7edd_native_active_site": -5.367
+      },
+      "ensemble_best_affinity_kcal_mol": -5.367,
+      "ensemble_mean_affinity_kcal_mol": -5.297000000000001,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.3578,
+      "receptor_count": 2,
+      "rank_by_affinity": 1,
+      "rank": 3
+    },
+    {
+      "ligand_id": "caffeine",
+      "role": "decoy",
+      "heavy_atom_count": 14,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -4.975,
+        "spycep_7edd_native_active_site": -4.503
+      },
+      "ensemble_best_affinity_kcal_mol": -4.975,
+      "ensemble_mean_affinity_kcal_mol": -4.739,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.3553571428571428,
+      "receptor_count": 2,
+      "rank_by_affinity": 2,
+      "rank": 4
+    }
+  ]
+}
