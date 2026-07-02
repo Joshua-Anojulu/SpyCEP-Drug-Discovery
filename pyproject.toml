@@ -15,7 +15,8 @@ receptor-prep = [
   "meeko>=0.7.1",
   "rdkit>=2026.3.3",
   "gemmi>=0.7.5",
-  "scipy>=1.18.0"
+  "scipy>=1.18.0",
+  "numpy>=2.5.0"
 ]
 
 [tool.pytest.ini_options]

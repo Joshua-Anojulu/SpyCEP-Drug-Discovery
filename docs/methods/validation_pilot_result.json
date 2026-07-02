@@ -123,5 +123,74 @@
       "rank_by_affinity": 2,
       "rank": 4
     }
+  ],
+  "pose_interactions": [
+    {
+      "ligand_id": "benzamidine",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -4.897,
+      "contacted_active_site_residues": [],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "benzamidine",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -4.603,
+      "contacted_active_site_residues": [
+        "A:151:ASP"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "4_aminobenzamidine",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -4.748,
+      "contacted_active_site_residues": [],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "4_aminobenzamidine",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -4.624,
+      "contacted_active_site_residues": [
+        "A:151:ASP"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "caffeine",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -4.975,
+      "contacted_active_site_residues": [],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "caffeine",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -4.503,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "ibuprofen",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.227,
+      "contacted_active_site_residues": [
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "ibuprofen",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -5.367,
+      "contacted_active_site_residues": [
+        "A:151:ASP"
+      ],
+      "contacts_catalytic_triad": false
+    }
   ]
 }

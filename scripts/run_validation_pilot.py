@@ -20,12 +20,14 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from spycep_drug_discovery.docking import DEFAULT_EXHAUSTIVENESS, DEFAULT_NUM_MODES, DEFAULT_SEED, dock_ligand
 from spycep_drug_discovery.docking_analysis import rank_docking_results, write_ranking_csv
+from spycep_drug_discovery.interaction_analysis import analyze_pose_interactions
 from spycep_drug_discovery.ligand_preparation import prepare_ligands
 
 VINA_EXECUTABLE = PROJECT_ROOT / "tools" / "vina.exe"
 MEEKO_LIGAND = PROJECT_ROOT / ".venv" / "Scripts" / "mk_prepare_ligand.exe"
 COMPOUND_FILE = PROJECT_ROOT / "docs" / "methods" / "validation_pilot_compounds.json"
 RECEPTOR_FILE = PROJECT_ROOT / "docs" / "methods" / "pdbqt_conversion.json"
+POCKET_FILE = PROJECT_ROOT / "docs" / "methods" / "pocket_definition.json"
 RESULT_MANIFEST = PROJECT_ROOT / "docs" / "methods" / "validation_pilot_result.json"
 RANKING_CSV = PROJECT_ROOT / "results" / "tables" / "validation_pilot_ranking.csv"
 
@@ -47,6 +49,7 @@ def _load_receptors() -> list[dict]:
 def main() -> None:
     compounds = json.loads(COMPOUND_FILE.read_text(encoding="utf-8"))["compounds"]
     receptors = _load_receptors()
+    active_site = json.loads(POCKET_FILE.read_text(encoding="utf-8"))["active_site_residues"]
 
     ligand_manifest = prepare_ligands(
         compounds,
@@ -72,8 +75,17 @@ def main() -> None:
             )
             row["role"] = role_by_id.get(ligand["ligand_id"])
             row["heavy_atom_count"] = ligand["heavy_atom_count"]
+            row["interactions"] = analyze_pose_interactions(
+                PROJECT_ROOT / receptor["receptor_pdbqt_path"],
+                PROJECT_ROOT / row["out_path"],
+                active_site,
+            )
             results.append(row)
-            print(f"  {row['ligand_id']:>18} vs {row['pocket_id']:<32} best={row['best_affinity_kcal_mol']:.3f}")
+            contacts = ",".join(row["interactions"]["contacted_active_site_residues"]) or "none"
+            print(
+                f"  {row['ligand_id']:>18} vs {row['pocket_id']:<32} "
+                f"best={row['best_affinity_kcal_mol']:.3f}  active-site contacts: {contacts}"
+            )
 
     ranked = rank_docking_results(results)
     write_ranking_csv(ranked, RANKING_CSV)
@@ -106,6 +118,16 @@ def main() -> None:
         },
         "ligands": ligand_manifest["ligands"],
         "ranking": ranked,
+        "pose_interactions": [
+            {
+                "ligand_id": row["ligand_id"],
+                "pocket_id": row["pocket_id"],
+                "best_affinity_kcal_mol": row["best_affinity_kcal_mol"],
+                "contacted_active_site_residues": row["interactions"]["contacted_active_site_residues"],
+                "contacts_catalytic_triad": row["interactions"]["contacts_catalytic_triad"],
+            }
+            for row in results
+        ],
     }
     RESULT_MANIFEST.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     print(f"\nReproducibility deterministic: {reproducible}")

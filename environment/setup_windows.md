@@ -53,6 +53,42 @@ Review Meeko residue omissions before any docking run:
 .\.venv\Scripts\python.exe scripts\review_pdbqt_conversion.py
 ```
 
+## Milestone 3: Ligand Preparation And Docking
+
+The `vina` Python binding does not build on Windows/Python 3.14 (it needs Boost), so the
+pipeline calls the official AutoDock Vina Windows executable via subprocess. Download it
+once into the git-ignored `tools\` directory:
+
+```powershell
+New-Item -ItemType Directory -Force tools | Out-Null
+Invoke-WebRequest -Uri "https://github.com/ccsb-scripps/AutoDock-Vina/releases/download/v1.2.7/vina_1.2.7_win.exe" -OutFile tools\vina.exe
+.\tools\vina.exe --version
+```
+
+Ligand preparation and interaction analysis reuse the receptor-prep extra (RDKit, Meeko,
+SciPy). Install it if you have not already:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e ".[dev,receptor-prep]"
+```
+
+Run the pipeline-validation pilot (throwaway set; validates that ligand prep -> Vina
+docking -> ranking runs and is reproducible before real compound curation):
+
+```powershell
+.\.venv\Scripts\python.exe scripts\run_validation_pilot.py
+```
+
+Regenerate the tracked docking methods note from the pilot result:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\write_docking_methods.py
+```
+
+The downloaded `tools\vina.exe`, generated ligand PDBQT files, and docking poses/logs are
+Git-ignored. The tracked docking manifests are `docs/methods/validation_pilot_compounds.json`,
+`docs/methods/validation_pilot_result.json`, and the generated note `docs/methods/docking_analysis.md`.
+
 The default report is generated from tracked normalized RCSB metadata in `docs/methods/rcsb_metadata.json` and manual structure-review fields in `docs/methods/structure_review.json`.
 
 The raw structure files, cleaned receptor PDBs, generated PDBQT/Meeko files, and generated CSV outputs are ignored by Git. The methods notes in `docs/methods/target_feasibility.md`, `docs/methods/pocket_definition.json`, `docs/methods/receptor_preparation.json`, `docs/methods/pdbqt_conversion.json`, and `docs/methods/pdbqt_quality_review.json` are tracked because they record the decision gate.

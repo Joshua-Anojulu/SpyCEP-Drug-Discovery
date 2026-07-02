@@ -38,3 +38,9 @@ The first executable milestone determines whether SpyCEP/ScpC has structures sui
 ## Milestone 2: Pocket Definition And Receptor Preparation
 
 The second milestone records approved candidate SpyCEP/ScpC receptor pockets, cleaned receptor-preparation manifests, Meeko receptor PDBQT conversion manifests, and PDBQT QC review before docking. The current candidate set uses 5XYA as the AES-anchored active-site receptor and 7EDD as the native coverage comparator.
+
+## Milestone 3: Ligand Preparation And Docking
+
+The third milestone adds a reproducible compound-docking pipeline: RDKit + Meeko ligand preparation, an AutoDock Vina docking wrapper (fixed seed), ligand-efficiency ranking that corrects Vina's molecular-size bias, and catalytic-triad interaction analysis. A throwaway validation pilot (`scripts/run_validation_pilot.py`) confirms the pipeline runs end-to-end and is reproducible before any real compound library is curated. See `environment/setup_windows.md` for the AutoDock Vina download and commands, and `docs/methods/docking_analysis.md` for the generated methods note.
+
+Real compound-library curation and docking remain gated on explicit user approval of the library scope.
