@@ -1,9 +1,10 @@
 PROJECT_CONTEXT.md
 .worktrees/
 
-# Local environments
+# Local environments and external tool binaries
 .venv/
 venv/
+tools/
 env/
 __pycache__/
 *.py[cod]
