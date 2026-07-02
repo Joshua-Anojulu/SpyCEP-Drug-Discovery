@@ -9,6 +9,7 @@ from typing import Any
 PREPARED_RECEPTOR_DIR = "data/processed/receptors"
 PREPARATION_RULES = (
     "Keep only the selected receptor chain from ATOM records.",
+    "For atoms with alternate conformations, keep only the first altLoc seen per atom and drop the rest.",
     "Convert polymer MSE HETATM records to MET ATOM records, including SE-to-SD atom naming.",
     "Remove non-polymer HETATM records, including crystallographic ligands, salts, ions, and waters.",
     "Write cleaned PDB receptors only; PDBQT conversion remains a later, separately verified step.",
@@ -21,22 +22,31 @@ class CleanedReceptorPdb:
     retained_atom_records: int
     converted_mse_records: int
     removed_heterogen_records: int
+    dropped_altloc_records: int
 
 
 def clean_receptor_pdb_text(pdb_text: str, chain_id: str) -> CleanedReceptorPdb:
     output_lines: list[str] = []
     converted_mse_records = 0
     removed_heterogen_records = 0
+    dropped_altloc_records = 0
+    seen_altloc_atoms: set[tuple[str, str, str]] = set()
 
     for line in pdb_text.splitlines():
         if line.startswith("ATOM  "):
             if _chain_id(line) == chain_id:
-                output_lines.append(line)
+                if _keep_conformer(line, seen_altloc_atoms):
+                    output_lines.append(line)
+                else:
+                    dropped_altloc_records += 1
             continue
         if line.startswith("HETATM"):
             if _chain_id(line) == chain_id and _residue_name(line) == "MSE":
-                output_lines.append(_mse_to_met_atom_line(line))
-                converted_mse_records += 1
+                if _keep_conformer(line, seen_altloc_atoms):
+                    output_lines.append(_mse_to_met_atom_line(line))
+                    converted_mse_records += 1
+                else:
+                    dropped_altloc_records += 1
             else:
                 removed_heterogen_records += 1
 
@@ -46,7 +56,19 @@ def clean_receptor_pdb_text(pdb_text: str, chain_id: str) -> CleanedReceptorPdb:
         retained_atom_records=len(output_lines) - 1,
         converted_mse_records=converted_mse_records,
         removed_heterogen_records=removed_heterogen_records,
+        dropped_altloc_records=dropped_altloc_records,
     )
+
+
+def _keep_conformer(line: str, seen_altloc_atoms: set[tuple[str, str, str]]) -> bool:
+    alt_loc = line[16]
+    if alt_loc == " ":
+        return True
+    atom_key = (line[22:27].strip(), _atom_name(line), _residue_name(line))
+    if atom_key in seen_altloc_atoms:
+        return False
+    seen_altloc_atoms.add(atom_key)
+    return True
 
 
 def prepare_receptors(
@@ -90,6 +112,7 @@ def _manifest_row(
         "retained_atom_records": cleaned.retained_atom_records,
         "converted_mse_records": cleaned.converted_mse_records,
         "removed_heterogen_records": cleaned.removed_heterogen_records,
+        "dropped_altloc_records": cleaned.dropped_altloc_records,
     }
 
 

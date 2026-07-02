@@ -31,6 +31,39 @@ def test_clean_receptor_pdb_text_keeps_chain_and_converts_mse():
     assert cleaned.removed_heterogen_records == 1
 
 
+def test_clean_receptor_pdb_text_keeps_first_alternate_conformer():
+    pdb_text = "\n".join(
+        [
+            _atom("ATOM", 1, "OG", "SER", "A", 617, 1.0, 2.0, 3.0, "O", alt_loc="A"),
+            _atom("ATOM", 2, "OG", "SER", "A", 617, 4.0, 5.0, 6.0, "O", alt_loc="B"),
+            _atom("ATOM", 3, "CA", "GLY", "A", 618, 7.0, 8.0, 9.0, "C"),
+            "END",
+        ]
+    )
+
+    cleaned = clean_receptor_pdb_text(pdb_text, chain_id="A")
+
+    assert "   1.000   2.000   3.000" in cleaned.pdb_text
+    assert "   4.000   5.000   6.000" not in cleaned.pdb_text
+    assert cleaned.retained_atom_records == 2
+    assert cleaned.dropped_altloc_records == 1
+
+
+def test_clean_receptor_pdb_text_unchanged_without_altlocs():
+    pdb_text = "\n".join(
+        [
+            _atom("ATOM", 1, "CA", "SER", "A", 10, 1.0, 2.0, 3.0, "C"),
+            _atom("ATOM", 2, "CB", "SER", "A", 10, 4.0, 5.0, 6.0, "C"),
+            "END",
+        ]
+    )
+
+    cleaned = clean_receptor_pdb_text(pdb_text, chain_id="A")
+
+    assert cleaned.dropped_altloc_records == 0
+    assert cleaned.retained_atom_records == 2
+
+
 def test_prepare_receptors_writes_cleaned_pdbs_and_manifest(tmp_path):
     structure_dir = tmp_path / "structures"
     output_dir = tmp_path / "processed" / "receptors"
@@ -130,8 +163,9 @@ def _atom(
     y: float,
     z: float,
     element: str,
+    alt_loc: str = " ",
 ) -> str:
     return (
-        f"{record:<6}{serial:5d} {atom_name:>4} {residue_name:>3} {chain_id}{residue_number:4d}"
+        f"{record:<6}{serial:5d} {atom_name:>4}{alt_loc:1}{residue_name:>3} {chain_id}{residue_number:4d}"
         f"    {x:8.3f}{y:8.3f}{z:8.3f}  1.00 10.00          {element:>2}"
     )

@@ -3,6 +3,7 @@
   "source_pocket_definition": "docs/methods/pocket_definition.json",
   "rules": [
     "Keep only the selected receptor chain from ATOM records.",
+    "For atoms with alternate conformations, keep only the first altLoc seen per atom and drop the rest.",
     "Convert polymer MSE HETATM records to MET ATOM records, including SE-to-SD atom naming.",
     "Remove non-polymer HETATM records, including crystallographic ligands, salts, ions, and waters.",
     "Write cleaned PDB receptors only; PDBQT conversion remains a later, separately verified step."
@@ -26,7 +27,8 @@
       },
       "retained_atom_records": 10269,
       "converted_mse_records": 197,
-      "removed_heterogen_records": 31
+      "removed_heterogen_records": 31,
+      "dropped_altloc_records": 0
     },
     {
       "pocket_id": "spycep_7edd_native_active_site",
@@ -46,7 +48,8 @@
       },
       "retained_atom_records": 10731,
       "converted_mse_records": 212,
-      "removed_heterogen_records": 137
+      "removed_heterogen_records": 137,
+      "dropped_altloc_records": 0
     }
   ]
 }
