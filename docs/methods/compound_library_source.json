@@ -1,0 +1,24 @@
+{
+  "library_version": "2026-07-02",
+  "status": "scaffold_awaiting_sourced_compounds",
+  "composition_decision": "both: custom_anti_virulence set (novelty) + fda_comparator set (benchmark)",
+  "schema": {
+    "ligand_id": "short unique slug used for filenames",
+    "name": "human-readable compound name",
+    "smiles": "canonical SMILES (must be RDKit-parseable)",
+    "compound_class": "chemical/mechanistic class",
+    "inclusion_rationale": "why this compound is in the set",
+    "source": "PMID:<id> or an http(s) URL (required provenance)",
+    "set": "custom_anti_virulence | fda_comparator",
+    "pubchem_cid": "optional PubChem CID",
+    "inchi": "optional InChI",
+    "known_target_or_mechanism": "optional",
+    "safety_caveat": "optional"
+  },
+  "notes": [
+    "Compounds must be sourced from real literature/databases with verifiable provenance.",
+    "Do NOT add compounds with invented SMILES, CIDs, or citations.",
+    "Populate this file, then run scripts/curate_compounds.py to validate before docking."
+  ],
+  "compounds": []
+}

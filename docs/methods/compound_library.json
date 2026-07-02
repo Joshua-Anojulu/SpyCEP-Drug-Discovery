@@ -1,0 +1,10 @@
+{
+  "library_version": "2026-07-02",
+  "compound_count": 0,
+  "counts_by_set": {
+    "custom_anti_virulence": 0,
+    "fda_comparator": 0
+  },
+  "source": "docs/methods/compound_library_source.json",
+  "compounds": []
+}
