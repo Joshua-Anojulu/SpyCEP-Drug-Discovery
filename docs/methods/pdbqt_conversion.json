@@ -1,0 +1,129 @@
+{
+  "conversion_version": "2026-07-02",
+  "source_receptor_preparation": "docs/methods/receptor_preparation.json",
+  "source_preparation_version": "2026-07-02",
+  "tool": {
+    "name": "Meeko mk_prepare_receptor",
+    "command_path": ".venv/Scripts/mk_prepare_receptor.exe",
+    "meeko_version": "0.7.1",
+    "rdkit_version": "2026.03.3",
+    "gemmi_version": "0.7.5",
+    "scipy_version": "1.18.0"
+  },
+  "allow_bad_res": true,
+  "allow_bad_res_reason": "SpyCEP crystal structures contain incomplete residues; direct Meeko template matching fails without --allow_bad_res. Generated receptor PDBQT files require review before docking.",
+  "rules": [
+    "Convert only receptors approved in docs/methods/receptor_preparation.json.",
+    "Use Meeko mk_prepare_receptor with the tracked active-site box center and size.",
+    "Use --allow_bad_res because the selected SpyCEP structures contain incomplete residues.",
+    "Record output hashes and command arguments before any docking run."
+  ],
+  "receptors": [
+    {
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "pdb_id": "5XYA",
+      "chain_id": "A",
+      "source_prepared_pdb_path": "data/processed/receptors/spycep_5xya_aes_active_site.pdb",
+      "source_prepared_pdb_sha256": "181b43f4a17b6dd750893b1357ddaf910527f88622e637ca7243cec5d279dee3",
+      "box_center_angstrom": {
+        "x": -43.74,
+        "y": 28.233,
+        "z": 26.561
+      },
+      "box_size_angstrom": {
+        "x": 22.0,
+        "y": 22.0,
+        "z": 27.5
+      },
+      "command": [
+        ".venv/Scripts/mk_prepare_receptor.exe",
+        "--read_pdb",
+        "data/processed/receptors/spycep_5xya_aes_active_site.pdb",
+        "-o",
+        "data/processed/pdbqt/spycep_5xya_aes_active_site",
+        "--write_pdbqt",
+        "--write_json",
+        "--write_vina_box",
+        "--box_center",
+        "-43.740",
+        "28.233",
+        "26.561",
+        "--box_size",
+        "22.000",
+        "22.000",
+        "27.500",
+        "--allow_bad_res"
+      ],
+      "exit_code": 0,
+      "stdout_line_count": 6,
+      "stderr_line_count": 665,
+      "stderr_tail": "CLYN       heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess={1}\n\nmatched with excess inter-residue bond(s): A:1548\nNo template matched for residue_key='A:1572'\ntried 3 templates for residue_key='A:1572'excess_H_ok=False\nLEU        heavy_miss=3 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess=set()\nNLEU       heavy_miss=3 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess={4}\nCLEU       heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess={1}\n\nmatched with excess inter-residue bond(s): A:1572\nNo template matched for residue_key='A:1574'\ntried 6 templates for residue_key='A:1574'excess_H_ok=False\nLYS        heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss={0} bond_excess=set()\nNLYS       heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss={0} bond_excess={4}\nCLYS       heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess=set()\nLYN        heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss={0} bond_excess=set()\nNLYN       heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss={0} bond_excess={4}\nCLYN       heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess=set()\n\n- Template matching failed for: ['A:118', 'A:119', 'A:204', 'A:206', 'A:208', 'A:209', 'A:210', 'A:213', 'A:214', 'A:275', 'A:276', 'A:320', 'A:430', 'A:431', 'A:433', 'A:450', 'A:455', 'A:458', 'A:460', 'A:461', 'A:465', 'A:466', 'A:468', 'A:469', 'A:471', 'A:472', 'A:473', 'A:474', 'A:477', 'A:478', 'A:493', 'A:494', 'A:495', 'A:496', 'A:497', 'A:498', 'A:499', 'A:500', 'A:501', 'A:503', 'A:505', 'A:506', 'A:507', 'A:535', 'A:536', 'A:537', 'A:539', 'A:540', 'A:541', 'A:542', 'A:543', 'A:544', 'A:546', 'A:549', 'A:550', 'A:551', 'A:552', 'A:554', 'A:556', 'A:564', 'A:604', 'A:606', 'A:607', 'A:608', 'A:613', 'A:723', 'A:1144', 'A:1145', 'A:1206', 'A:1268', 'A:1269', 'A:1270', 'A:1280', 'A:1286', 'A:1411', 'A:1413', 'A:1414', 'A:1515', 'A:1548', 'A:1572', 'A:1574'] Ignored due to allow_bad_res.",
+      "output_paths": {
+        "pdbqt": "data/processed/pdbqt/spycep_5xya_aes_active_site.pdbqt",
+        "json": "data/processed/pdbqt/spycep_5xya_aes_active_site.json",
+        "box_txt": "data/processed/pdbqt/spycep_5xya_aes_active_site.box.txt",
+        "box_pdb": "data/processed/pdbqt/spycep_5xya_aes_active_site.box.pdb"
+      },
+      "output_sha256": {
+        "pdbqt": "7bfea8db62864e033668ec67f2cdc1a5d4ea27270710a3eb7195cc6237fc0842",
+        "json": "50eb8a198fbfc2158bba0a89adc07d8fa1c91b27ef4370e3684e3724b2ad8fb9",
+        "box_txt": "8083802ff2ff26b793180b961ff1352e32119fe516c622dd782294740f33badb",
+        "box_pdb": "ace5147f8fb14cbef504345e0ec8f3d1e7563ba7d8f0023fcf1623e5280ece3c"
+      },
+      "pdbqt_atom_records": 12122
+    },
+    {
+      "pocket_id": "spycep_7edd_native_active_site",
+      "pdb_id": "7EDD",
+      "chain_id": "A",
+      "source_prepared_pdb_path": "data/processed/receptors/spycep_7edd_native_active_site.pdb",
+      "source_prepared_pdb_sha256": "7364599a1bea22c9dd82b09f54d269542ebb298ba48a8971d8987e98a98982e3",
+      "box_center_angstrom": {
+        "x": -43.735,
+        "y": -29.373,
+        "z": -22.41
+      },
+      "box_size_angstrom": {
+        "x": 22.0,
+        "y": 22.0,
+        "z": 22.0
+      },
+      "command": [
+        ".venv/Scripts/mk_prepare_receptor.exe",
+        "--read_pdb",
+        "data/processed/receptors/spycep_7edd_native_active_site.pdb",
+        "-o",
+        "data/processed/pdbqt/spycep_7edd_native_active_site",
+        "--write_pdbqt",
+        "--write_json",
+        "--write_vina_box",
+        "--box_center",
+        "-43.735",
+        "-29.373",
+        "-22.410",
+        "--box_size",
+        "22.000",
+        "22.000",
+        "22.000",
+        "--allow_bad_res"
+      ],
+      "exit_code": 0,
+      "stdout_line_count": 6,
+      "stderr_line_count": 211,
+      "stderr_tail": "tried 6 templates for residue_key='A:1130'excess_H_ok=False\nLYS        heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess=set()\nNLYS       heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess={4}\nCLYS       heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess={1}\nLYN        heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess=set()\nNLYN       heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess={4}\nCLYN       heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess={1}\n\nmatched with excess inter-residue bond(s): A:1130\nNo template matched for residue_key='A:1548'\ntried 6 templates for residue_key='A:1548'excess_H_ok=False\nLYS        heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess=set()\nNLYS       heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess={4}\nCLYS       heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess={1}\nLYN        heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess=set()\nNLYN       heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess={4}\nCLYN       heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess={1}\n\nmatched with excess inter-residue bond(s): A:1548\n- Template matching failed for: ['A:182', 'A:330', 'A:462', 'A:477', 'A:481', 'A:482', 'A:483', 'A:485', 'A:486', 'A:492', 'A:495', 'A:505', 'A:506', 'A:531', 'A:533', 'A:539', 'A:541', 'A:543', 'A:544', 'A:1078', 'A:1126', 'A:1128', 'A:1130', 'A:1548'] Ignored due to allow_bad_res.",
+      "output_paths": {
+        "pdbqt": "data/processed/pdbqt/spycep_7edd_native_active_site.pdbqt",
+        "json": "data/processed/pdbqt/spycep_7edd_native_active_site.json",
+        "box_txt": "data/processed/pdbqt/spycep_7edd_native_active_site.box.txt",
+        "box_pdb": "data/processed/pdbqt/spycep_7edd_native_active_site.box.pdb"
+      },
+      "output_sha256": {
+        "pdbqt": "ab8189f7a3bb7b4c35fed6cdabf8e38e6ff0d87e8296de36bc9eceefd5384c6f",
+        "json": "5023ff2ae5dfe4f1cd5c8c0bba61c9e4aa4c3b0a512b7b1907f7b475f64b272d",
+        "box_txt": "401b8656c2ff0f6de315b4433068c74418c3b6485581f5bc6c7e68913bd4d257",
+        "box_pdb": "c15e1236f8d68b21cbd7212e4ce3031470db56713abb2f57ce234cb2c099da55"
+      },
+      "pdbqt_atom_records": 13038
+    }
+  ]
+}

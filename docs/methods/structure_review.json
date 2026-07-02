@@ -1,0 +1,85 @@
+{
+  "review_version": "2026-07-01",
+  "structures": [
+    {
+      "target_id": "spycep_scpC",
+      "pdb_id": "5XXZ",
+      "chain_coverage": "Chains A/B; SEQRES 1533 residues each; modeled A has 1334 residues across 118-206, 278-475, 480-495, 497-515, 535-598, 613-1547, 1562-1574; modeled B has 1310 residues across 119-204, 279-448, 454-468, 480-509, 540-558, 565-598, 612-1553, 1561-1574.",
+      "missing_regions": "REMARK 465 lists 199 missing residues in chain A, including 207-277, 516-534, 599-612, 1548-1561, and 1575-1647; chain B has 223 missing residues, including 205-278, 510-539, 599-611, 1554-1560, and 1575-1647.",
+      "catalytic_region_status": "unclear",
+      "pocket_definition_status": "rejected",
+      "docking_readiness": "rejected",
+      "review_notes": "UniProt Q3HV58 annotates active-site positions 151, 279, and 617. Coordinates contain D151, but PDB SEQADV mutates H279 and S617 to alanine in both chains. Excluded from native active-site docking; see docs/methods/pocket_definition.json."
+    },
+    {
+      "target_id": "spycep_scpC",
+      "pdb_id": "5XYA",
+      "chain_coverage": "Chain A; SEQRES 1530 residues; modeled 1358 residues across 118-214, 275-479, 493-508, and 535-1574.",
+      "missing_regions": "REMARK 465 lists 172 missing residues in chain A: 215-274, 480-492, 509-534, and 1575-1647.",
+      "catalytic_region_status": "present",
+      "pocket_definition_status": "approved",
+      "docking_readiness": "approved",
+      "review_notes": "Coordinates contain native D151, H279, and S617. HET/SITE records place AES near H279 and S617; approved as the primary ligand-anchored receptor-preparation candidate in docs/methods/pocket_definition.json."
+    },
+    {
+      "target_id": "spycep_scpC",
+      "pdb_id": "5XYR",
+      "chain_coverage": "Chain A; SEQRES 1647 residues; modeled 1380 residues across 119-213, 273-457, 464-524, 535-554, and 556-1574.",
+      "missing_regions": "REMARK 465 lists 267 missing residues in chain A: 1-118, 214-272, 458-463, 525-534, 555, and 1575-1647.",
+      "catalytic_region_status": "present",
+      "pocket_definition_status": "unclear",
+      "docking_readiness": "pending",
+      "review_notes": "Coordinates contain native D151, H279, and S617. Heterogens are chloride, calcium, sulfate, and malonate rather than a substrate-like inhibitor; retained as supporting evidence but not selected for the first receptor-preparation set."
+    },
+    {
+      "target_id": "spycep_scpC",
+      "pdb_id": "7EDD",
+      "chain_coverage": "Chain A; SEQRES 1519 residues; modeled 1394 residues across 117-213, 275-526, and 531-1575.",
+      "missing_regions": "REMARK 465 lists 125 missing residues in chain A: 34-116, 527-530, and 1576-1613.",
+      "catalytic_region_status": "present",
+      "pocket_definition_status": "approved",
+      "docking_readiness": "approved",
+      "review_notes": "Coordinates contain native D151, H279, and S617 and this entry has the lowest missing-residue burden among the current SpyCEP set. Approved as the native coverage-comparator receptor-preparation candidate in docs/methods/pocket_definition.json."
+    },
+    {
+      "target_id": "speb",
+      "pdb_id": "1DKI",
+      "chain_coverage": "pending fallback review",
+      "missing_regions": "pending fallback review",
+      "catalytic_region_status": "pending",
+      "pocket_definition_status": "pending",
+      "docking_readiness": "pending",
+      "review_notes": "Fallback target review has not been completed."
+    },
+    {
+      "target_id": "speb",
+      "pdb_id": "1PVJ",
+      "chain_coverage": "pending fallback review",
+      "missing_regions": "pending fallback review",
+      "catalytic_region_status": "pending",
+      "pocket_definition_status": "pending",
+      "docking_readiness": "pending",
+      "review_notes": "Fallback target review has not been completed."
+    },
+    {
+      "target_id": "speb",
+      "pdb_id": "4D8B",
+      "chain_coverage": "pending fallback review",
+      "missing_regions": "pending fallback review",
+      "catalytic_region_status": "pending",
+      "pocket_definition_status": "pending",
+      "docking_readiness": "pending",
+      "review_notes": "Fallback target review has not been completed."
+    },
+    {
+      "target_id": "speb",
+      "pdb_id": "6UKD",
+      "chain_coverage": "pending fallback review",
+      "missing_regions": "pending fallback review",
+      "catalytic_region_status": "pending",
+      "pocket_definition_status": "pending",
+      "docking_readiness": "pending",
+      "review_notes": "Fallback target review has not been completed."
+    }
+  ]
+}

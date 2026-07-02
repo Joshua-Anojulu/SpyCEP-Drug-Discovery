@@ -22,7 +22,11 @@ class StructureFeasibility:
 def score_structure(metadata: RcsbEntryMetadata) -> StructureFeasibility:
     resolution_flag = _resolution_flag(metadata.resolution_angstrom)
     method_flag = "experimental" if metadata.method else "missing"
-    overall_flag = "candidate" if resolution_flag in {"strong", "usable"} and method_flag == "experimental" else "review_required"
+    overall_flag = (
+        "manual_review_required"
+        if resolution_flag in {"strong", "usable"} and method_flag == "experimental"
+        else "review_required"
+    )
     notes = _notes_for_flags(resolution_flag, method_flag)
     return StructureFeasibility(
         pdb_id=metadata.pdb_id,

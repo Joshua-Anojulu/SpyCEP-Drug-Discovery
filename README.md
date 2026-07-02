@@ -25,6 +25,16 @@ python -m venv .venv
 
 Use the virtual environment Python for all project commands on Windows.
 
+For receptor-to-PDBQT conversion, install the optional local receptor-preparation toolchain:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e ".[dev,receptor-prep]"
+```
+
 ## Milestone 1: Target Feasibility
 
 The first executable milestone determines whether SpyCEP/ScpC has structures suitable for defensible docking. See `environment/setup_windows.md` for local setup and commands.
+
+## Milestone 2: Pocket Definition And Receptor Preparation
+
+The second milestone records approved candidate SpyCEP/ScpC receptor pockets, cleaned receptor-preparation manifests, Meeko receptor PDBQT conversion manifests, and PDBQT QC review before docking. The current candidate set uses 5XYA as the AES-anchored active-site receptor and 7EDD as the native coverage comparator.

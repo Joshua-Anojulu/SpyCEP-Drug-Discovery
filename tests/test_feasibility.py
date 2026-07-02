@@ -15,7 +15,7 @@ def test_score_structure_rates_high_resolution_xray_as_strong_starting_point():
     assert score.pdb_id == "7EDD"
     assert score.resolution_flag == "usable"
     assert score.method_flag == "experimental"
-    assert score.overall_flag == "candidate"
+    assert score.overall_flag == "manual_review_required"
     assert "manual pocket review required" in score.notes
 
 

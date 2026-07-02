@@ -1,0 +1,30 @@
+{
+  "source": "RCSB Data API",
+  "snapshot_note": "Normalized metadata captured for the primary SpyCEP/ScpC target-feasibility gate.",
+  "entries": [
+    {
+      "pdb_id": "5XXZ",
+      "title": "",
+      "method": "X-RAY DIFFRACTION",
+      "resolution_angstrom": 3.085
+    },
+    {
+      "pdb_id": "5XYA",
+      "title": "",
+      "method": "X-RAY DIFFRACTION",
+      "resolution_angstrom": 3.0
+    },
+    {
+      "pdb_id": "5XYR",
+      "title": "",
+      "method": "X-RAY DIFFRACTION",
+      "resolution_angstrom": 2.8
+    },
+    {
+      "pdb_id": "7EDD",
+      "title": "",
+      "method": "X-RAY DIFFRACTION",
+      "resolution_angstrom": 2.897
+    }
+  ]
+}

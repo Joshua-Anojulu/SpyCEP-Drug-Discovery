@@ -1,0 +1,83 @@
+{
+  "definition_version": "2026-07-02",
+  "target_id": "spycep_scpC",
+  "decision_status": "approved_candidate_pockets",
+  "padding_angstrom": 6.0,
+  "minimum_box_size_angstrom": 22.0,
+  "active_site_residues": [
+    {
+      "chain_id": "A",
+      "residue_name": "ASP",
+      "residue_number": 151
+    },
+    {
+      "chain_id": "A",
+      "residue_name": "HIS",
+      "residue_number": 279
+    },
+    {
+      "chain_id": "A",
+      "residue_name": "SER",
+      "residue_number": 617
+    }
+  ],
+  "pockets": [
+    {
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "pdb_id": "5XYA",
+      "chain_id": "A",
+      "role": "primary_ligand_anchor",
+      "coordinate_source": "AES A1701 plus D151/H279/S617 catalytic side-chain atoms",
+      "box_center_angstrom": {
+        "x": -43.74,
+        "y": 28.233,
+        "z": 26.561
+      },
+      "box_size_angstrom": {
+        "x": 22.0,
+        "y": 22.0,
+        "z": 27.5
+      },
+      "selected_atom_count": 22,
+      "readiness": "approved_for_receptor_preparation",
+      "notes": "Primary SpyCEP pocket candidate. AES is covalently linked to S617 in the PDB file and anchors the active-site box."
+    },
+    {
+      "pocket_id": "spycep_7edd_native_active_site",
+      "pdb_id": "7EDD",
+      "chain_id": "A",
+      "role": "native_coverage_comparator",
+      "coordinate_source": "D151/H279/S617 catalytic side-chain atoms",
+      "box_center_angstrom": {
+        "x": -43.735,
+        "y": -29.373,
+        "z": -22.41
+      },
+      "box_size_angstrom": {
+        "x": 22.0,
+        "y": 22.0,
+        "z": 22.0
+      },
+      "selected_atom_count": 10,
+      "readiness": "approved_for_receptor_preparation",
+      "notes": "Native active-site comparator with better coordinate coverage than 5XYA, but no co-crystallized active-site ligand."
+    }
+  ],
+  "supporting_structures": [
+    {
+      "pdb_id": "5XYR",
+      "reason": "Native D151/H279/S617 coordinates are present, but no active-site ligand anchor is available."
+    }
+  ],
+  "excluded_structures": [
+    {
+      "pdb_id": "5XXZ",
+      "reason": "H279A and S617A active-site mutations"
+    }
+  ],
+  "preparation_notes": [
+    "Treat these as receptor-preparation candidates, not completed docking results.",
+    "Remove crystallographic solvent, salts, and non-anchor heterogens during receptor preparation.",
+    "Record all receptor-preparation commands before any docking run."
+  ]
+}
