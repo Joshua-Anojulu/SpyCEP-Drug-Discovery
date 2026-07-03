@@ -1,0 +1,97 @@
+{
+  "status": "boron_gemdiol_surrogate_approximation_not_merged_into_main_result",
+  "method": "each boron replaced by carbon (R-B(OH)2 -> R-CH(OH)2 gem-diol TS mimic); Vina lacks boron parameters",
+  "caveat": "Surrogates approximate sterics/H-bonding only; they drop boron covalent/electronic character. Interpret as indicative, not quantitative.",
+  "box_mode": "tight_triad_centered",
+  "results": [
+    {
+      "parent_ligand_id": "4_carboxyphenylboronic_acid",
+      "surrogate_smiles": "O=C(O)c1ccc(C(O)O)cc1",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -4.441,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.3700833333333333,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ]
+    },
+    {
+      "parent_ligand_id": "4_carboxyphenylboronic_acid",
+      "surrogate_smiles": "O=C(O)c1ccc(C(O)O)cc1",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -5.169,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.43074999999999997,
+      "contacted_active_site_residues": [
+        "A:151:ASP"
+      ]
+    },
+    {
+      "parent_ligand_id": "bortezomib",
+      "surrogate_smiles": "CC(C)C[C@H](NC(=O)[C@H](Cc1ccccc1)NC(=O)c1cnccn1)C(O)O",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.311,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.22539285714285714,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ]
+    },
+    {
+      "parent_ligand_id": "bortezomib",
+      "surrogate_smiles": "CC(C)C[C@H](NC(=O)[C@H](Cc1ccccc1)NC(=O)c1cnccn1)C(O)O",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.701,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.23932142857142855,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ]
+    },
+    {
+      "parent_ligand_id": "ixazomib",
+      "surrogate_smiles": "CC(C)C[C@H](NC(=O)CNC(=O)c1cc(Cl)ccc1Cl)C(O)O",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.697,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.24769565217391304,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ]
+    },
+    {
+      "parent_ligand_id": "ixazomib",
+      "surrogate_smiles": "CC(C)C[C@H](NC(=O)CNC(=O)c1cc(Cl)ccc1Cl)C(O)O",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -5.946,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.25852173913043475,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ]
+    },
+    {
+      "parent_ligand_id": "phenylboronic_acid",
+      "surrogate_smiles": "OC(O)c1ccccc1",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -4.309,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.4787777777777778,
+      "contacted_active_site_residues": [
+        "A:151:ASP"
+      ]
+    },
+    {
+      "parent_ligand_id": "phenylboronic_acid",
+      "surrogate_smiles": "OC(O)c1ccccc1",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -4.778,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.5308888888888889,
+      "contacted_active_site_residues": [
+        "A:151:ASP"
+      ]
+    }
+  ]
+}
