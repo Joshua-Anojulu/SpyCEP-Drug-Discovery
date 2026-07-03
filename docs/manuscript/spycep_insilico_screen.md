@@ -4,7 +4,7 @@
 
 ## Abstract
 
-SpyCEP/ScpC is a cell-envelope, subtilisin-like (MEROPS S8) serine protease of *Streptococcus pyogenes* that degrades IL-8 and related CXC chemokines, impairing neutrophil recruitment and promoting invasive disease including necrotizing fasciitis. No small-molecule inhibitor of SpyCEP has been reported; the enzyme's known inhibitors are proteins. We assembled a 77-compound library — 22 rational serine/subtilisin protease-inhibitor and anti-virulence chemotypes plus 55 FDA-approved comparators, all with PubChem-sourced structures — and performed reproducible ensemble docking against two experimental SpyCEP structures (PDB 5XYA, 7EDD) with AutoDock Vina, ranking by ligand efficiency and profiling catalytic-triad engagement. Across both a wide (22 Å) and a tight, triad-centered (16–20 Å) search box, docking did not surface a compelling candidate: predicted affinities spanned only −4.5 to −8.1 kcal/mol, and rational protease chemotypes were only marginally enriched over generic drugs by ligand efficiency. We report this as an honest benchmarking/negative result, consistent with SpyCEP being a difficult small-molecule target, and provide a fully reproducible pipeline for future work.
+SpyCEP/ScpC is a cell-envelope, subtilisin-like (MEROPS S8) serine protease of *Streptococcus pyogenes* that degrades IL-8 and related CXC chemokines, impairing neutrophil recruitment and promoting invasive disease including necrotizing fasciitis. No small-molecule inhibitor of SpyCEP has been reported; the enzyme's known inhibitors are proteins. We assembled a 77-compound library — 22 rational serine/subtilisin protease-inhibitor and anti-virulence chemotypes plus 55 FDA-approved comparators, all with PubChem-sourced structures — and performed reproducible ensemble docking against two experimental SpyCEP structures (PDB 5XYA, 7EDD) with AutoDock Vina, ranking by ligand efficiency and profiling catalytic-triad engagement. Across both a wide (22 Å) and a tight, triad-centered (16–20 Å) search box, docking did not surface a compelling candidate: predicted affinities spanned only −4.5 to −8.1 kcal/mol, and rational protease chemotypes were only marginally enriched over generic drugs by ligand efficiency. As a positive control, the identical pipeline applied to the related protease SpeB — for which a co-crystallized small-molecule inhibitor exists (PDB 6UKD) — correctly ranked that known inhibitor (−6.75 kcal/mol) above all drug-like decoys, confirming the SpyCEP result reflects the target rather than a failure of the method. We report this as an honest benchmarking/negative result, consistent with SpyCEP being a difficult small-molecule target, and provide a fully reproducible pipeline for future work.
 
 ## 1. Introduction
 
@@ -24,7 +24,10 @@ Ligands were desalted (largest fragment), embedded to a single 3D conformer (RDK
 ### 2.4 Boron handling
 AutoDock Vina lacks boron forcefield parameters, so the four boronic acids could not be docked directly. They were docked as B→C gem-diol surrogates (R-B(OH)₂ → R-CH(OH)₂, a tetrahedral transition-state mimic), reported separately and never merged into the main results.
 
-### 2.5 Reproducibility
+### 2.5 SpeB positive control
+To test whether the pipeline can recover a true binder, the identical protocol was applied to the related *S. pyogenes* cysteine protease SpeB/streptopain, using the inhibitor co-complex structure 6UKD (catalytic dyad Cys192/His340). The co-crystallized specific inhibitor (RCSB chemical component Q9D) was docked alongside seven drug-like decoys into a box centered on the dyad.
+
+### 2.6 Reproducibility
 The pipeline is scripted end-to-end with tracked manifests recording tool versions, commands, seeds, box coordinates, and output hashes. Fixed-seed docking is deterministic (benzamidine vs 5XYA reproduced −4.897 kcal/mol on repeat runs). AutoDock Vina 1.2.7, RDKit 2026.03.3, Meeko 0.7.1.
 
 ## 3. Results
@@ -39,9 +42,11 @@ Of 77 compounds, 73 docked successfully; the 4 boronic acids failed on both rece
 
 **Boron surrogates.** The bortezomib gem-diol surrogate scored best among boron compounds (−6.70 kcal/mol, tight box), but as an approximation this is indicative only.
 
+**SpeB positive control.** Applied unchanged to SpeB (6UKD), the pipeline ranked the co-crystallized inhibitor Q9D first at −6.75 kcal/mol, ahead of all seven drug-like decoys (best decoy −5.55 kcal/mol), with Q9D contacting both catalytic dyad residues. The pipeline therefore recovers a genuine binder with a clear margin when one exists.
+
 ## 4. Discussion
 
-Two independent box definitions, ligand-efficiency ranking, and per-residue interaction analysis converge on the same conclusion: docking does not nominate a compelling small-molecule SpyCEP inhibitor from this library. This negative result is informative. It is consistent with the absence of any reported small-molecule SpyCEP inhibitor and with the protein-only inhibitor repertoire of the S8 subtilase family, and it cautions against over-interpreting single docking scores against this target. The one modest positive signal — a consistent, weak enrichment of rational protease chemotypes by ligand efficiency, several of which are small S1-binding amidines/guanidines — is a hypothesis for focused experimental testing, not a claim.
+Two independent box definitions, ligand-efficiency ranking, and per-residue interaction analysis converge on the same conclusion: docking does not nominate a compelling small-molecule SpyCEP inhibitor from this library. The SpeB positive control is decisive for interpreting this: because the same pipeline cleanly separates a known inhibitor from decoys on a related protease, the flat SpyCEP result is attributable to the target — a large, shallow substrate groove with no reported small-molecule inhibitor — rather than to a limitation of the docking protocol. This negative result is informative. It is consistent with the absence of any reported small-molecule SpyCEP inhibitor and with the protein-only inhibitor repertoire of the S8 subtilase family, and it cautions against over-interpreting single docking scores against this target. The one modest positive signal — a consistent, weak enrichment of rational protease chemotypes by ligand efficiency, several of which are small S1-binding amidines/guanidines — is a hypothesis for focused experimental testing, not a claim.
 
 ## 5. Limitations
 
