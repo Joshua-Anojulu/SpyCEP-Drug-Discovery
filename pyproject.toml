@@ -18,6 +18,9 @@ receptor-prep = [
   "scipy>=1.18.0",
   "numpy>=2.5.0"
 ]
+figures = [
+  "matplotlib>=3.9"
+]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

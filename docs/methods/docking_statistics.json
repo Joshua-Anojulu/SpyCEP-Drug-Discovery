@@ -1,0 +1,76 @@
+{
+  "note": "More negative affinity/efficiency = stronger. Bootstrap = 95% CI, 10000 resamples, seed 42.",
+  "custom_vs_fda_wide_box": {
+    "best_affinity": {
+      "custom_n": 18,
+      "fda_n": 55,
+      "bootstrap_mean_difference_custom_minus_fda": {
+        "observed_difference": 0.2853424242424252,
+        "ci95_low": -0.2512624242424257,
+        "ci95_high": 0.8106531565656556,
+        "n_resamples": 10000,
+        "excludes_zero": false
+      },
+      "mann_whitney": {
+        "u_statistic": 584.0,
+        "p_value": 0.2573561050716253
+      }
+    },
+    "ligand_efficiency": {
+      "custom_n": 18,
+      "fda_n": 55,
+      "bootstrap_mean_difference_custom_minus_fda": {
+        "observed_difference": -0.03442749328755318,
+        "ci95_low": -0.09211073093440686,
+        "ci95_high": 0.02058894626309049,
+        "n_resamples": 10000,
+        "excludes_zero": false
+      },
+      "mann_whitney": {
+        "u_statistic": 444.0,
+        "p_value": 0.5180712237431928
+      }
+    }
+  },
+  "custom_vs_fda_tight_box": {
+    "best_affinity": {
+      "custom_n": 18,
+      "fda_n": 54,
+      "bootstrap_mean_difference_custom_minus_fda": {
+        "observed_difference": 0.27787037037037,
+        "ci95_low": -0.1684819444444442,
+        "ci95_high": 0.7201740740740756,
+        "n_resamples": 10000,
+        "excludes_zero": false
+      },
+      "mann_whitney": {
+        "u_statistic": 582.0,
+        "p_value": 0.21425994843980434
+      }
+    },
+    "ligand_efficiency": {
+      "custom_n": 18,
+      "fda_n": 54,
+      "bootstrap_mean_difference_custom_minus_fda": {
+        "observed_difference": -0.03134427596852407,
+        "ci95_low": -0.0892976042090141,
+        "ci95_high": 0.023894087326118762,
+        "n_resamples": 10000,
+        "excludes_zero": false
+      },
+      "mann_whitney": {
+        "u_statistic": 445.0,
+        "p_value": 0.5984122410601709
+      }
+    }
+  },
+  "speb_positive_control": {
+    "positive_affinity": -6.745,
+    "best_decoy_affinity": -5.555,
+    "margin_to_best_decoy": 1.1900000000000004,
+    "decoy_mean": -4.996,
+    "decoy_sd": 0.3951830799346889,
+    "sd_stronger_than_decoy_mean": 4.4257967732045955,
+    "beats_all_decoys": true
+  }
+}

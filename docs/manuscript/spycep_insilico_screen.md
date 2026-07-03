@@ -27,22 +27,25 @@ AutoDock Vina lacks boron forcefield parameters, so the four boronic acids could
 ### 2.5 SpeB positive control
 To test whether the pipeline can recover a true binder, the identical protocol was applied to the related *S. pyogenes* cysteine protease SpeB/streptopain, using the inhibitor co-complex structure 6UKD (catalytic dyad Cys192/His340). The co-crystallized specific inhibitor (RCSB chemical component Q9D) was docked alongside seven drug-like decoys into a box centered on the dyad.
 
-### 2.6 Reproducibility
+### 2.6 Statistics and non-fit handling
+Set-level differences (custom vs FDA) were assessed by a 10,000-resample bootstrap 95% CI on the mean difference (seed 42) and a two-sided Mann–Whitney U test. A non-negative AutoDock Vina affinity indicates no valid pose (the ligand does not fit the search box); such non-fits — one compound, vancomycin, in the tight box — were excluded from the quantitative comparison. The positive-control margin is reported as the gap to the best decoy and in units of the decoy standard deviation.
+
+### 2.7 Reproducibility
 The pipeline is scripted end-to-end with tracked manifests recording tool versions, commands, seeds, box coordinates, and output hashes. Fixed-seed docking is deterministic (benzamidine vs 5XYA reproduced −4.897 kcal/mol on repeat runs). AutoDock Vina 1.2.7, RDKit 2026.03.3, Meeko 0.7.1.
 
 ## 3. Results
 
 Of 77 compounds, 73 docked successfully; the 4 boronic acids failed on both receptors (boron unsupported by Vina) and were treated as surrogates.
 
-**No standout candidate.** Predicted best ensemble affinities spanned −4.5 to −8.1 kcal/mol (wide box), with none in the strong-binding regime (< −9 kcal/mol). The top of the ligand-efficiency ranking interleaves rational chemotypes (benzamidine, 4-aminobenzamidine, 4-guanidinobenzoic acid, PMSF, APMSF, DCI, AEBSF) with small approved drugs (metformin, allopurinol, acetaminophen, gabapentin), i.e. the metric rewards small size more than mechanistic rationale.
+**No standout candidate.** Predicted best ensemble affinities spanned −4.5 to −8.1 kcal/mol (wide box), with none in the strong-binding regime (< −9 kcal/mol). The top of the ligand-efficiency ranking interleaves rational chemotypes (benzamidine, 4-aminobenzamidine, 4-guanidinobenzoic acid, PMSF, APMSF, DCI, AEBSF) with small approved drugs (metformin, allopurinol, acetaminophen, gabapentin) — i.e. the metric rewards small size more than mechanistic rationale (Figure 3).
 
-**Weak, box-robust enrichment.** Custom vs FDA sets, best-affinity mean: −5.93 vs −6.21 kcal/mol (wide box; FDA slightly better, a size artifact) and −5.68 vs −5.13 (tight box; custom better, because the focused box penalizes bulky drugs). Ligand efficiency favored the custom set marginally under both boxes (−0.29 to −0.30 vs −0.25 to −0.27). Custom compounds were over-represented in the top-20 by ligand efficiency (8 of 18 docked customs vs 12 of 55 FDA) under both boxes — a consistent but weak signal.
+**No significant custom-vs-FDA separation (Figure 1).** Mean best affinity was −5.93 (custom) vs −6.21 kcal/mol (FDA) in the wide box and −5.68 vs −5.96 in the tight box (excluding one non-fit, vancomycin, whose non-negative clash score in the tight box is not a valid pose). FDA is thus marginally *stronger* on the mean in both boxes, but the difference is **not statistically significant**: a 10,000-sample bootstrap of the custom−FDA mean difference gives 95% CI [−0.25, 0.81] (wide) and [−0.17, 0.72] (tight), both spanning zero, and Mann–Whitney U tests are non-significant. Ligand efficiency favored the custom set only marginally (−0.30 vs −0.27), with custom over-represented in the top-20 by efficiency (8 of 18 docked customs vs 12 of 55 FDA) — a weak, non-significant signal, not a separation.
 
 **Triad contact is not discriminating.** Under both boxes essentially all compounds contacted ≥1 triad residue (73/73) and most contacted all three (55–56/73), a geometric consequence of the compact active site rather than evidence of specific engagement.
 
 **Boron surrogates.** The bortezomib gem-diol surrogate scored best among boron compounds (−6.70 kcal/mol, tight box), but as an approximation this is indicative only.
 
-**SpeB positive control.** Applied unchanged to SpeB (6UKD), the pipeline ranked the co-crystallized inhibitor Q9D first at −6.75 kcal/mol, ahead of all seven drug-like decoys (best decoy −5.55 kcal/mol), with Q9D contacting both catalytic dyad residues. The pipeline therefore recovers a genuine binder with a clear margin when one exists.
+**SpeB positive control (Figure 2).** Applied unchanged to SpeB (6UKD), the pipeline ranked the co-crystallized inhibitor Q9D first at −6.75 kcal/mol, ahead of all seven drug-like decoys (best decoy aspirin −5.55 kcal/mol; margin 1.19 kcal/mol, **4.4 standard deviations** below the decoy mean), with Q9D contacting both catalytic dyad residues (Cys192, His340). The pipeline therefore recovers a genuine binder with a clear, quantified margin when one exists — in direct contrast to the flat SpyCEP result.
 
 ## 4. Discussion
 
@@ -56,7 +59,29 @@ Two independent box definitions, ligand-efficiency ranking, and per-residue inte
 - Receptors were prepared with `--allow_bad_res`; incomplete crystallographic residues (none catalytic) were omitted.
 - Rigid-receptor docking of a single ligand conformer ensemble ignores protein flexibility and the large, shallow substrate groove of SpyCEP.
 - Custom "positive" chemotypes are general serine/subtilisin-protease motifs, not validated SpyCEP binders, so the study benchmarks a pipeline rather than confirming SpyCEP selectivity.
+- Oversized ligands (e.g. vancomycin) do not fit the tight active-site box and return invalid (non-negative) scores; these are excluded rather than interpreted, which slightly reduces the tight-box FDA sample.
+- With n=77 compounds and a single ligand pose, set-level statistical power is modest; the reported non-significance is consistent with a true null but does not prove equivalence.
 
 ## 6. Data and code availability
 
-All scripts, tracked manifests (target feasibility, pocket definitions, receptor and PDBQT preparation, QC, compound library with provenance, and docking results), tool versions, seeds, and commands are in the project repository. Generated large artifacts (structures, PDBQT, poses) are reproducible from the scripts.
+All scripts, tracked manifests (target feasibility, pocket definitions, receptor and PDBQT preparation, QC, compound library with provenance, docking results, and statistics), tool versions, seeds, and commands are in the project repository. Generated large artifacts (structures, PDBQT, poses) are reproducible from the scripts.
+
+## Figures
+
+- **Figure 1.** Custom vs FDA best-affinity distributions in the wide and tight boxes; overlapping, non-significant (`docs/manuscript/figures/fig1_custom_vs_fda.png`).
+- **Figure 2.** SpeB positive control — known inhibitor Q9D vs drug-like decoys (`fig2_speb_positive_control.png`).
+- **Figure 3.** Top 15 SpyCEP compounds by ligand efficiency, colored by set (`fig3_top_hits_ligand_efficiency.png`).
+
+## References
+
+1. Zinkernagel AS, Timmer AM, Pence MA, Locke JB, Buchanan JT, Turner CE, Mishalian I, Sriskandan S, Hanski E, Nizet V. "The IL-8 protease SpyCEP/ScpC of group A *Streptococcus* promotes resistance to neutrophil killing." *Cell Host & Microbe* 4(2):170–178, 2008. PMID 18692776.
+2. Wang AY, González-Páez GE, Wolan DW, et al. "Identification and Co-complex Structure of a New *S. pyogenes* SpeB Small Molecule Inhibitor." *Biochemistry* 54(28):4365–4373, 2015. PMID 26132413. (SpeB positive control; PDB 6UKD.)
+3. UniProt Consortium. UniProtKB entry Q3HV58 (SpyCEP/ScpC, *Streptococcus pyogenes*). https://www.uniprot.org/uniprotkb/Q3HV58.
+4. RCSB Protein Data Bank. Structures 5XYA and 7EDD (SpyCEP/ScpC) and 6UKD (SpeB streptopain–inhibitor Q9D co-complex). https://www.rcsb.org.
+5. Trott O, Olson AJ. "AutoDock Vina: improving the speed and accuracy of docking with a new scoring function, efficient optimization, and multithreading." *J. Comput. Chem.* 31(2):455–461, 2010.
+6. Eberhardt J, Santos-Martins D, Tillack AF, Forli S. "AutoDock Vina 1.2.0: New Docking Methods, Expanded Force Field, and Python Bindings." *J. Chem. Inf. Model.* 61(8):3891–3898, 2021.
+7. Landrum G, et al. "RDKit: Open-source cheminformatics." https://www.rdkit.org.
+8. Kim S, et al. "PubChem 2023 update." *Nucleic Acids Research* 51(D1):D1373–D1380, 2023.
+9. Lipinski CA, Lombardo F, Dominy BW, Feeney PJ. "Experimental and computational approaches to estimate solubility and permeability in drug discovery and development settings." *Adv. Drug Deliv. Rev.* 23(1–3):3–25, 1997.
+
+*(Tool-version DOIs and any remaining author lists to be confirmed against the cited records before submission.)*

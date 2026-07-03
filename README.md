@@ -1,18 +1,16 @@
 # SpyCEP Drug Discovery
 
-Computational anti-virulence drug discovery project targeting SpyCEP/ScpC in necrotizing fasciitis-causing *Streptococcus pyogenes*.
+A reproducible in-silico screen for small-molecule inhibitors of SpyCEP/ScpC, the IL-8–degrading serine protease of necrotizing-fasciitis–causing *Streptococcus pyogenes*.
 
-The project is currently in design and feasibility planning. The approved primary direction is a novelty-first, reproducible docking workflow against SpyCEP/ScpC, with SpeB as the fallback target if SpyCEP/ScpC is not structurally suitable for defensible docking.
+**Headline result — an honest benchmarking / negative study.** Ensemble docking of a 77-compound library (22 rational protease/anti-virulence chemotypes + 55 FDA comparators, all PubChem-sourced) against two SpyCEP structures (PDB 5XYA, 7EDD) found **no compelling small-molecule candidate**: predicted affinities span only −4.5 to −8.1 kcal/mol and the custom chemotypes do **not** significantly separate from generic drugs (bootstrap 95% CI on the mean difference includes zero under both a wide and a tight search box). A **SpeB positive control** — the same pipeline applied to a related protease with a known inhibitor (PDB 6UKD) — correctly ranks that inhibitor 4.4 SD above all decoys, showing the SpyCEP null reflects a hard target, not a broken method. See the manuscript in [`docs/manuscript/spycep_insilico_screen.md`](docs/manuscript/spycep_insilico_screen.md) and figures in `docs/manuscript/figures/`.
 
-## Current Status
+## What's here
 
-- Disease focus: necrotizing fasciitis associated with group A *Streptococcus pyogenes*.
-- Primary target: SpyCEP/ScpC chemokine protease.
-- Fallback target: SpeB streptococcal cysteine protease.
-- Library strategy: custom anti-virulence/protease-focused compound library, with FDA-approved compounds as a comparator set.
-- Reproducibility goal: preprint-grade scripts, notebooks, metadata, methods notes, and generated figures/tables.
+- **Reproducible pipeline** (fixed seeds, tracked JSON manifests with hashes, PubChem/RCSB-sourced structures — nothing hand-entered): target feasibility → pocket definition → receptor prep → PDBQT conversion + QC → compound curation + ADMET → ligand prep → AutoDock Vina docking → ligand-efficiency ranking → catalytic-triad interaction analysis → bootstrap statistics → figures.
+- **77 passing tests**; deterministic manifest regeneration.
+- **Primary target** SpyCEP/ScpC (S8 subtilisin-like, catalytic triad D151/H279/S617); **positive-control target** SpeB (Cys192/His340).
 
-See the design spec in `docs/superpowers/specs/` before implementation work.
+See the design spec in `docs/superpowers/specs/` and the generated methods note `docs/methods/docking_analysis.md`.
 
 ## Local Setup
 
@@ -41,6 +39,12 @@ The second milestone records approved candidate SpyCEP/ScpC receptor pockets, cl
 
 ## Milestone 3: Ligand Preparation And Docking
 
-The third milestone adds a reproducible compound-docking pipeline: RDKit + Meeko ligand preparation, an AutoDock Vina docking wrapper (fixed seed), ligand-efficiency ranking that corrects Vina's molecular-size bias, and catalytic-triad interaction analysis. A throwaway validation pilot (`scripts/run_validation_pilot.py`) confirms the pipeline runs end-to-end and is reproducible before any real compound library is curated. See `environment/setup_windows.md` for the AutoDock Vina download and commands, and `docs/methods/docking_analysis.md` for the generated methods note.
+The third milestone is the full compound-docking study: RDKit + Meeko ligand preparation (with desalting), an AutoDock Vina docking wrapper (fixed seed), ligand-efficiency ranking that corrects Vina's molecular-size bias, catalytic-triad interaction analysis, bootstrap/Mann–Whitney statistics, and publication figures. The full 77-compound library was docked against the 5XYA + 7EDD ensemble under two box definitions, a SpeB positive control was run, and the honest-null manuscript was written. See `environment/setup_windows.md` for the AutoDock Vina download and commands, and `docs/methods/docking_analysis.md` for the generated methods note.
 
-Real compound-library curation and docking remain gated on explicit user approval of the library scope.
+Regenerate statistics and figures:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e ".[dev,receptor-prep,figures]"
+.\.venv\Scripts\python.exe scripts\compute_statistics.py
+.\.venv\Scripts\python.exe scripts\make_figures.py
+```

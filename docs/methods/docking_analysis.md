@@ -33,9 +33,9 @@ Top 10 by ligand efficiency:
 ## Tight triad-centered box (robustness check)
 
 - Compounds docked: 73/77.
-- Custom vs FDA mean best affinity: -5.68 vs -5.13 kcal/mol (focusing the box penalizes bulky drugs, so the custom set now edges FDA).
-- Custom vs FDA mean ligand efficiency: -0.294 vs -0.251.
-- The null conclusion is robust to box choice; triad contact stays non-discriminating.
+- Custom vs FDA mean best affinity: -5.68 vs -5.96 kcal/mol (non-fits with non-negative affinity, e.g. oversized vancomycin, are excluded).
+- Custom vs FDA mean ligand efficiency: -0.294 vs -0.263.
+- FDA is marginally stronger on the mean in both boxes but the difference is not significant (bootstrap CI includes 0; see docking_statistics.json); the null is robust to box choice.
 
 ## Boron gem-diol surrogates
 

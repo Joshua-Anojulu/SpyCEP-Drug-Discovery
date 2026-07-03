@@ -23,8 +23,10 @@ OUTPUT = PROJECT_ROOT / "docs" / "methods" / "docking_analysis.md"
 
 
 def _set_stats(result: dict, setof: dict) -> dict:
-    cu = [r for r in result["ranking"] if setof.get(r["ligand_id"]) == "custom_anti_virulence"]
-    fd = [r for r in result["ranking"] if setof.get(r["ligand_id"]) == "fda_comparator"]
+    # Exclude non-fits (non-negative affinity = ligand does not fit the box, e.g. vancomycin in the tight box).
+    ranking = [r for r in result["ranking"] if r["ensemble_best_affinity_kcal_mol"] < 0]
+    cu = [r for r in ranking if setof.get(r["ligand_id"]) == "custom_anti_virulence"]
+    fd = [r for r in ranking if setof.get(r["ligand_id"]) == "fda_comparator"]
 
     def m(group, key):
         return mean([r[key] for r in group]) if group else float("nan")
@@ -89,9 +91,10 @@ def main() -> None:
             "",
             f"- Compounds docked: {tight['compounds_docked']}/{tight['compounds_input']}.",
             f"- Custom vs FDA mean best affinity: {ts['custom_best']:.2f} vs {ts['fda_best']:.2f} kcal/mol "
-            "(focusing the box penalizes bulky drugs, so the custom set now edges FDA).",
+            "(non-fits with non-negative affinity, e.g. oversized vancomycin, are excluded).",
             f"- Custom vs FDA mean ligand efficiency: {ts['custom_le']:.3f} vs {ts['fda_le']:.3f}.",
-            "- The null conclusion is robust to box choice; triad contact stays non-discriminating.",
+            "- FDA is marginally stronger on the mean in both boxes but the difference is not significant "
+            "(bootstrap CI includes 0; see docking_statistics.json); the null is robust to box choice.",
             "",
         ]
     if boron:
