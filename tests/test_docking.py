@@ -8,9 +8,28 @@ from spycep_drug_discovery.docking import (
     DEFAULT_SEED,
     DockingError,
     build_vina_command,
+    parse_pose_pdbqt_modes,
     parse_vina_modes,
     summarize_docking,
 )
+
+
+POSE_PDBQT = """MODEL 1
+REMARK VINA RESULT:      -5.367      0.000      0.000
+ATOM      1  C   LIG A 900      10.0  1.0  0.0  1.00  0.00     0.000 C
+ENDMDL
+MODEL 2
+REMARK VINA RESULT:      -5.100      1.234      2.345
+ENDMDL
+"""
+
+
+def test_parse_pose_pdbqt_modes_recovers_affinities():
+    modes = parse_pose_pdbqt_modes(POSE_PDBQT)
+
+    assert len(modes) == 2
+    assert modes[0]["affinity_kcal_mol"] == -5.367
+    assert modes[1]["rmsd_ub"] == 2.345
 
 
 VINA_STDOUT = """Computing Vina grid ... done.

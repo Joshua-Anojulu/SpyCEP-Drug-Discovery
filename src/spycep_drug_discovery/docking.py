@@ -17,6 +17,7 @@ DEFAULT_NUM_MODES = 9
 _MODE_ROW = re.compile(
     r"^\s*(\d+)\s+(-?\d+\.\d+)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s*$"
 )
+_POSE_RESULT = re.compile(r"^REMARK VINA RESULT:\s+(-?\d+\.\d+)\s+(-?\d+\.\d+)\s+(-?\d+\.\d+)")
 
 
 class DockingError(RuntimeError):
@@ -77,6 +78,23 @@ def parse_vina_modes(stdout: str) -> tuple[dict[str, Any], ...]:
     return tuple(modes)
 
 
+def parse_pose_pdbqt_modes(text: str) -> tuple[dict[str, Any], ...]:
+    """Recover docked modes from a Vina output pose file's REMARK VINA RESULT lines."""
+    modes: list[dict[str, Any]] = []
+    for line in text.splitlines():
+        match = _POSE_RESULT.match(line.strip())
+        if match:
+            modes.append(
+                {
+                    "mode": len(modes) + 1,
+                    "affinity_kcal_mol": float(match.group(1)),
+                    "rmsd_lb": float(match.group(2)),
+                    "rmsd_ub": float(match.group(3)),
+                }
+            )
+    return tuple(modes)
+
+
 def summarize_docking(modes: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     if not modes:
         raise DockingError("Docking produced no scored poses.")
@@ -99,9 +117,30 @@ def dock_ligand(
     seed: int = DEFAULT_SEED,
     exhaustiveness: int = DEFAULT_EXHAUSTIVENESS,
     num_modes: int = DEFAULT_NUM_MODES,
+    resume: bool = True,
 ) -> dict[str, Any]:
     output_dir.mkdir(parents=True, exist_ok=True)
     out_path = output_dir / f"{ligand_id}__{receptor['pocket_id']}.pdbqt"
+
+    if resume and out_path.is_file():
+        existing_modes = parse_pose_pdbqt_modes(out_path.read_text(encoding="utf-8"))
+        if existing_modes:
+            summary = summarize_docking(existing_modes)
+            return {
+                "ligand_id": ligand_id,
+                "pocket_id": receptor["pocket_id"],
+                "pdb_id": receptor.get("pdb_id"),
+                "command": ["<resumed from existing pose file>"],
+                "seed": seed,
+                "exhaustiveness": exhaustiveness,
+                "num_modes": num_modes,
+                "out_path": _relative_path(out_path, project_root),
+                "out_sha256": _sha256(out_path),
+                "modes": list(existing_modes),
+                "resumed": True,
+                **summary,
+            }
+
     command = build_vina_command(
         vina_executable=vina_executable,
         receptor_pdbqt=receptor["receptor_pdbqt_path"],
