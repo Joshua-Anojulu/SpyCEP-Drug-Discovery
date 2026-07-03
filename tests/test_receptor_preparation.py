@@ -47,6 +47,9 @@ def test_clean_receptor_pdb_text_keeps_first_alternate_conformer():
     assert "   4.000   5.000   6.000" not in cleaned.pdb_text
     assert cleaned.retained_atom_records == 2
     assert cleaned.dropped_altloc_records == 1
+    # the retained conformer's altLoc indicator (column 17) is cleared
+    kept = [ln for ln in cleaned.pdb_text.splitlines() if ln.startswith("ATOM") and "SER" in ln]
+    assert all(ln[16] == " " for ln in kept)
 
 
 def test_clean_receptor_pdb_text_unchanged_without_altlocs():

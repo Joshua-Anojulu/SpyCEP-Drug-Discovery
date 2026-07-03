@@ -36,14 +36,14 @@ def clean_receptor_pdb_text(pdb_text: str, chain_id: str) -> CleanedReceptorPdb:
         if line.startswith("ATOM  "):
             if _chain_id(line) == chain_id:
                 if _keep_conformer(line, seen_altloc_atoms):
-                    output_lines.append(line)
+                    output_lines.append(_blank_altloc(line))
                 else:
                     dropped_altloc_records += 1
             continue
         if line.startswith("HETATM"):
             if _chain_id(line) == chain_id and _residue_name(line) == "MSE":
                 if _keep_conformer(line, seen_altloc_atoms):
-                    output_lines.append(_mse_to_met_atom_line(line))
+                    output_lines.append(_blank_altloc(_mse_to_met_atom_line(line)))
                     converted_mse_records += 1
                 else:
                     dropped_altloc_records += 1
@@ -58,6 +58,11 @@ def clean_receptor_pdb_text(pdb_text: str, chain_id: str) -> CleanedReceptorPdb:
         removed_heterogen_records=removed_heterogen_records,
         dropped_altloc_records=dropped_altloc_records,
     )
+
+
+def _blank_altloc(line: str) -> str:
+    """Clear the altLoc indicator (column 17) on a retained conformer."""
+    return line[:16] + " " + line[17:] if len(line) > 16 else line
 
 
 def _keep_conformer(line: str, seen_altloc_atoms: set[tuple[str, str, str]]) -> bool:

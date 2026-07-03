@@ -1,0 +1,61 @@
+{
+  "status": "speb_positive_control_pipeline_validation",
+  "receptor": "6UKD chain A (streptopain/SpeB, catalytic dyad Cys192/His340)",
+  "positive_control_ligand": "Q9D (RCSB chemcomp; co-crystallized covalent inhibitor)",
+  "box_center_angstrom": {
+    "x": -24.069,
+    "y": -14.956,
+    "z": 14.686
+  },
+  "box_size_angstrom": {
+    "x": 20.013,
+    "y": 18.544,
+    "z": 18.903
+  },
+  "positive_best_affinity_kcal_mol": -6.745,
+  "positive_rank_by_affinity": 1,
+  "best_decoy_affinity_kcal_mol": -5.555,
+  "positive_outscores_all_decoys": true,
+  "results": [
+    {
+      "ligand_id": "Q9D_speb_inhibitor",
+      "best_affinity_kcal_mol": -6.745,
+      "rank_by_affinity": 1
+    },
+    {
+      "ligand_id": "aspirin",
+      "best_affinity_kcal_mol": -5.555,
+      "rank_by_affinity": 2
+    },
+    {
+      "ligand_id": "ibuprofen",
+      "best_affinity_kcal_mol": -5.271,
+      "rank_by_affinity": 3
+    },
+    {
+      "ligand_id": "caffeine",
+      "best_affinity_kcal_mol": -5.218,
+      "rank_by_affinity": 4
+    },
+    {
+      "ligand_id": "gabapentin",
+      "best_affinity_kcal_mol": -5.065,
+      "rank_by_affinity": 5
+    },
+    {
+      "ligand_id": "acetaminophen",
+      "best_affinity_kcal_mol": -4.745,
+      "rank_by_affinity": 6
+    },
+    {
+      "ligand_id": "benzamidine",
+      "best_affinity_kcal_mol": -4.717,
+      "rank_by_affinity": 7
+    },
+    {
+      "ligand_id": "metformin",
+      "best_affinity_kcal_mol": -4.401,
+      "rank_by_affinity": 8
+    }
+  ]
+}
