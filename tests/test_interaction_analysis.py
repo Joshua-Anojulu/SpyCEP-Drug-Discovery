@@ -3,6 +3,7 @@ from spycep_drug_discovery.interaction_analysis import (
     analyze_pose_interactions,
     contact_residue_keys,
     parse_pdbqt_atoms,
+    per_residue_interaction,
 )
 
 
@@ -83,3 +84,23 @@ def test_analyze_pose_interactions_flags_active_site(tmp_path):
 
 def test_active_site_residue_keys():
     assert active_site_residue_keys(ACTIVE_SITE) == ["A:151:ASP", "A:279:HIS", "A:617:SER"]
+
+
+def test_per_residue_interaction_reports_distance_and_counts():
+    receptor = parse_pdbqt_atoms(
+        "\n".join(
+            [
+                _atom("ND1", "HIS", 279, 0.0, 0.0, 0.0),
+                _atom("NE2", "HIS", 279, 1.0, 0.0, 0.0),
+                _atom("OG", "SER", 617, 30.0, 0.0, 0.0),
+            ]
+        )
+    )
+    ligand = parse_pdbqt_atoms("\n".join([_atom("C1", "LIG", 900, 2.0, 0.0, 0.0)]))
+
+    result = per_residue_interaction(receptor, ligand, ["A:279:HIS", "A:617:SER"], cutoff=4.0)
+
+    assert result["A:279:HIS"]["min_distance_angstrom"] == 1.0
+    assert result["A:279:HIS"]["contact_atom_count"] == 2
+    assert result["A:617:SER"]["min_distance_angstrom"] == 28.0
+    assert result["A:617:SER"]["contact_atom_count"] == 0

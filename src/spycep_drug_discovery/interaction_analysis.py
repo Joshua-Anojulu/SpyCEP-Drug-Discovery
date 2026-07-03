@@ -52,6 +52,34 @@ def contact_residue_keys(
     return sorted({receptor_atoms[index].residue_key for index in hit_indices})
 
 
+def per_residue_interaction(
+    receptor_atoms: Sequence[Atom],
+    ligand_atoms: Sequence[Atom],
+    residue_keys: Sequence[str],
+    *,
+    cutoff: float = CONTACT_CUTOFF_ANGSTROM,
+) -> dict[str, dict[str, Any]]:
+    """Graded per-residue signal: nearest ligand-atom distance and contact-atom count."""
+    import numpy as np
+
+    result: dict[str, dict[str, Any]] = {}
+    if not ligand_atoms:
+        return {key: {"min_distance_angstrom": None, "contact_atom_count": 0} for key in residue_keys}
+    ligand_coords = np.array([[a.x, a.y, a.z] for a in ligand_atoms])
+    for key in residue_keys:
+        residue_atoms = [a for a in receptor_atoms if a.residue_key == key]
+        if not residue_atoms:
+            result[key] = {"min_distance_angstrom": None, "contact_atom_count": 0}
+            continue
+        residue_coords = np.array([[a.x, a.y, a.z] for a in residue_atoms])
+        distances = np.sqrt(((residue_coords[:, None, :] - ligand_coords[None, :, :]) ** 2).sum(-1))
+        result[key] = {
+            "min_distance_angstrom": round(float(distances.min()), 2),
+            "contact_atom_count": int((distances <= cutoff).sum()),
+        }
+    return result
+
+
 def active_site_residue_keys(active_site_residues: Sequence[Mapping[str, Any]]) -> list[str]:
     return [
         f"{residue['chain_id']}:{int(residue['residue_number'])}:{residue['residue_name']}"
@@ -71,10 +99,12 @@ def analyze_pose_interactions(
     contacts = contact_residue_keys(receptor_atoms, ligand_atoms, cutoff=cutoff)
     active_keys = active_site_residue_keys(active_site_residues)
     contacted_active = [key for key in active_keys if key in set(contacts)]
+    per_residue = per_residue_interaction(receptor_atoms, ligand_atoms, active_keys, cutoff=cutoff)
     return {
         "contact_cutoff_angstrom": cutoff,
         "best_pose_ligand_atom_count": len(ligand_atoms),
         "contacted_residue_count": len(contacts),
         "contacted_active_site_residues": contacted_active,
         "contacts_catalytic_triad": len(contacted_active) == len(active_keys) and len(active_keys) > 0,
+        "per_triad_residue": per_residue,
     }
