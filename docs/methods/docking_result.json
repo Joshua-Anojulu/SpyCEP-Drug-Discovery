@@ -1,0 +1,2767 @@
+{
+  "run_version": "2026-07-02",
+  "status": "full_library_docking_computational_prioritization_only",
+  "seed": 42,
+  "exhaustiveness": 8,
+  "num_modes": 9,
+  "vina_version": "AutoDock Vina v1.2.7",
+  "receptor_ensemble": [
+    "spycep_5xya_aes_active_site",
+    "spycep_7edd_native_active_site"
+  ],
+  "compounds_input": 77,
+  "compounds_docked": 73,
+  "prep_failures": [],
+  "dock_failures": [
+    {
+      "ligand_id": "phenylboronic_acid",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "error": "phenylboronic_acid vs spycep_5xya_aes_active_site docking failed (exit 1): \n\nPDBQT parsing error: Atom type B is not a valid AutoDock type (atom types are case-sensitive).\n > ATOM      1  B   UNL     "
+    },
+    {
+      "ligand_id": "phenylboronic_acid",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "error": "phenylboronic_acid vs spycep_7edd_native_active_site docking failed (exit 1): \n\nPDBQT parsing error: Atom type B is not a valid AutoDock type (atom types are case-sensitive).\n > ATOM      1  B   UNL  "
+    },
+    {
+      "ligand_id": "4_carboxyphenylboronic_acid",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "error": "4_carboxyphenylboronic_acid vs spycep_5xya_aes_active_site docking failed (exit 1): \n\nPDBQT parsing error: Atom type B is not a valid AutoDock type (atom types are case-sensitive).\n > ATOM      7  B  "
+    },
+    {
+      "ligand_id": "4_carboxyphenylboronic_acid",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "error": "4_carboxyphenylboronic_acid vs spycep_7edd_native_active_site docking failed (exit 1): \n\nPDBQT parsing error: Atom type B is not a valid AutoDock type (atom types are case-sensitive).\n > ATOM      7  "
+    },
+    {
+      "ligand_id": "bortezomib",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "error": "bortezomib vs spycep_5xya_aes_active_site docking failed (exit 1): \n\nPDBQT parsing error: Atom type B is not a valid AutoDock type (atom types are case-sensitive).\n > ATOM      6  B   UNL     1       "
+    },
+    {
+      "ligand_id": "bortezomib",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "error": "bortezomib vs spycep_7edd_native_active_site docking failed (exit 1): \n\nPDBQT parsing error: Atom type B is not a valid AutoDock type (atom types are case-sensitive).\n > ATOM      6  B   UNL     1    "
+    },
+    {
+      "ligand_id": "ixazomib",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "error": "ixazomib vs spycep_5xya_aes_active_site docking failed (exit 1): \n\nPDBQT parsing error: Atom type B is not a valid AutoDock type (atom types are case-sensitive).\n > ATOM      6  B   UNL     1      -2."
+    },
+    {
+      "ligand_id": "ixazomib",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "error": "ixazomib vs spycep_7edd_native_active_site docking failed (exit 1): \n\nPDBQT parsing error: Atom type B is not a valid AutoDock type (atom types are case-sensitive).\n > ATOM      6  B   UNL     1      "
+    }
+  ],
+  "ranking": [
+    {
+      "ligand_id": "benzamidine",
+      "role": null,
+      "heavy_atom_count": 9,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -4.9,
+        "spycep_7edd_native_active_site": -4.653
+      },
+      "ensemble_best_affinity_kcal_mol": -4.9,
+      "ensemble_mean_affinity_kcal_mol": -4.7765,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.5444444444444445,
+      "receptor_count": 2,
+      "rank_by_affinity": 65,
+      "rank": 1
+    },
+    {
+      "ligand_id": "metformin",
+      "role": null,
+      "heavy_atom_count": 9,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -4.475,
+        "spycep_7edd_native_active_site": -4.313
+      },
+      "ensemble_best_affinity_kcal_mol": -4.475,
+      "ensemble_mean_affinity_kcal_mol": -4.394,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.4972222222222222,
+      "receptor_count": 2,
+      "rank_by_affinity": 73,
+      "rank": 2
+    },
+    {
+      "ligand_id": "allopurinol",
+      "role": null,
+      "heavy_atom_count": 10,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -4.818,
+        "spycep_7edd_native_active_site": -4.467
+      },
+      "ensemble_best_affinity_kcal_mol": -4.818,
+      "ensemble_mean_affinity_kcal_mol": -4.6425,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.48179999999999995,
+      "receptor_count": 2,
+      "rank_by_affinity": 68,
+      "rank": 3
+    },
+    {
+      "ligand_id": "4_aminobenzamidine",
+      "role": null,
+      "heavy_atom_count": 10,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -4.764,
+        "spycep_7edd_native_active_site": -4.667
+      },
+      "ensemble_best_affinity_kcal_mol": -4.764,
+      "ensemble_mean_affinity_kcal_mol": -4.7155000000000005,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.47640000000000005,
+      "receptor_count": 2,
+      "rank_by_affinity": 71,
+      "rank": 4
+    },
+    {
+      "ligand_id": "acetaminophen",
+      "role": null,
+      "heavy_atom_count": 11,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -4.541,
+        "spycep_7edd_native_active_site": -5.216
+      },
+      "ensemble_best_affinity_kcal_mol": -5.216,
+      "ensemble_mean_affinity_kcal_mol": -4.878500000000001,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.4741818181818182,
+      "receptor_count": 2,
+      "rank_by_affinity": 61,
+      "rank": 5
+    },
+    {
+      "ligand_id": "4_guanidinobenzoic_acid",
+      "role": null,
+      "heavy_atom_count": 13,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -4.981,
+        "spycep_7edd_native_active_site": -5.487
+      },
+      "ensemble_best_affinity_kcal_mol": -5.487,
+      "ensemble_mean_affinity_kcal_mol": -5.234,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.42207692307692307,
+      "receptor_count": 2,
+      "rank_by_affinity": 51,
+      "rank": 6
+    },
+    {
+      "ligand_id": "pmsf",
+      "role": null,
+      "heavy_atom_count": 11,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -4.253,
+        "spycep_7edd_native_active_site": -4.543
+      },
+      "ensemble_best_affinity_kcal_mol": -4.543,
+      "ensemble_mean_affinity_kcal_mol": -4.398,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.41300000000000003,
+      "receptor_count": 2,
+      "rank_by_affinity": 72,
+      "rank": 7
+    },
+    {
+      "ligand_id": "gabapentin",
+      "role": null,
+      "heavy_atom_count": 12,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -4.414,
+        "spycep_7edd_native_active_site": -4.882
+      },
+      "ensemble_best_affinity_kcal_mol": -4.882,
+      "ensemble_mean_affinity_kcal_mol": -4.648,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.4068333333333333,
+      "receptor_count": 2,
+      "rank_by_affinity": 66,
+      "rank": 8
+    },
+    {
+      "ligand_id": "apmsf",
+      "role": null,
+      "heavy_atom_count": 14,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.455,
+        "spycep_7edd_native_active_site": -5.301
+      },
+      "ensemble_best_affinity_kcal_mol": -5.455,
+      "ensemble_mean_affinity_kcal_mol": -5.378,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.3896428571428571,
+      "receptor_count": 2,
+      "rank_by_affinity": 53,
+      "rank": 9
+    },
+    {
+      "ligand_id": "dci",
+      "role": null,
+      "heavy_atom_count": 13,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -4.769,
+        "spycep_7edd_native_active_site": -4.93
+      },
+      "ensemble_best_affinity_kcal_mol": -4.93,
+      "ensemble_mean_affinity_kcal_mol": -4.8495,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.3792307692307692,
+      "receptor_count": 2,
+      "rank_by_affinity": 63,
+      "rank": 10
+    },
+    {
+      "ligand_id": "aspirin",
+      "role": null,
+      "heavy_atom_count": 13,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -4.896,
+        "spycep_7edd_native_active_site": -4.928
+      },
+      "ensemble_best_affinity_kcal_mol": -4.928,
+      "ensemble_mean_affinity_kcal_mol": -4.912,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.3790769230769231,
+      "receptor_count": 2,
+      "rank_by_affinity": 64,
+      "rank": 11
+    },
+    {
+      "ligand_id": "aebsf",
+      "role": null,
+      "heavy_atom_count": 13,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -4.641,
+        "spycep_7edd_native_active_site": -4.81
+      },
+      "ensemble_best_affinity_kcal_mol": -4.81,
+      "ensemble_mean_affinity_kcal_mol": -4.7255,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.37,
+      "receptor_count": 2,
+      "rank_by_affinity": 70,
+      "rank": 12
+    },
+    {
+      "ligand_id": "hydrochlorothiazide",
+      "role": null,
+      "heavy_atom_count": 17,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.08,
+        "spycep_7edd_native_active_site": -6.107
+      },
+      "ensemble_best_affinity_kcal_mol": -6.107,
+      "ensemble_mean_affinity_kcal_mol": -6.093500000000001,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.3592352941176471,
+      "receptor_count": 2,
+      "rank_by_affinity": 36,
+      "rank": 13
+    },
+    {
+      "ligand_id": "ibuprofen",
+      "role": null,
+      "heavy_atom_count": 15,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.227,
+        "spycep_7edd_native_active_site": -5.367
+      },
+      "ensemble_best_affinity_kcal_mol": -5.367,
+      "ensemble_mean_affinity_kcal_mol": -5.297000000000001,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.3578,
+      "receptor_count": 2,
+      "rank_by_affinity": 56,
+      "rank": 14
+    },
+    {
+      "ligand_id": "caffeine",
+      "role": null,
+      "heavy_atom_count": 14,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -4.979,
+        "spycep_7edd_native_active_site": -4.512
+      },
+      "ensemble_best_affinity_kcal_mol": -4.979,
+      "ensemble_mean_affinity_kcal_mol": -4.7455,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.35564285714285715,
+      "receptor_count": 2,
+      "rank_by_affinity": 62,
+      "rank": 15
+    },
+    {
+      "ligand_id": "acyclovir",
+      "role": null,
+      "heavy_atom_count": 16,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.648,
+        "spycep_7edd_native_active_site": -5.176
+      },
+      "ensemble_best_affinity_kcal_mol": -5.648,
+      "ensemble_mean_affinity_kcal_mol": -5.412,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.353,
+      "receptor_count": 2,
+      "rank_by_affinity": 48,
+      "rank": 16
+    },
+    {
+      "ligand_id": "naproxen",
+      "role": null,
+      "heavy_atom_count": 17,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.739,
+        "spycep_7edd_native_active_site": -5.958
+      },
+      "ensemble_best_affinity_kcal_mol": -5.958,
+      "ensemble_mean_affinity_kcal_mol": -5.8485,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.35047058823529414,
+      "receptor_count": 2,
+      "rank_by_affinity": 40,
+      "rank": 17
+    },
+    {
+      "ligand_id": "diminazene",
+      "role": null,
+      "heavy_atom_count": 21,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -7.016,
+        "spycep_7edd_native_active_site": -6.597
+      },
+      "ensemble_best_affinity_kcal_mol": -7.016,
+      "ensemble_mean_affinity_kcal_mol": -6.8065,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.3340952380952381,
+      "receptor_count": 2,
+      "rank_by_affinity": 16,
+      "rank": 18
+    },
+    {
+      "ligand_id": "diclofenac",
+      "role": null,
+      "heavy_atom_count": 19,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.208,
+        "spycep_7edd_native_active_site": -6.035
+      },
+      "ensemble_best_affinity_kcal_mol": -6.208,
+      "ensemble_mean_affinity_kcal_mol": -6.1215,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.32673684210526316,
+      "receptor_count": 2,
+      "rank_by_affinity": 33,
+      "rank": 19
+    },
+    {
+      "ligand_id": "morphine",
+      "role": null,
+      "heavy_atom_count": 21,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.657,
+        "spycep_7edd_native_active_site": -6.366
+      },
+      "ensemble_best_affinity_kcal_mol": -6.657,
+      "ensemble_mean_affinity_kcal_mol": -6.5115,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.317,
+      "receptor_count": 2,
+      "rank_by_affinity": 27,
+      "rank": 20
+    },
+    {
+      "ligand_id": "sertraline",
+      "role": null,
+      "heavy_atom_count": 20,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.01,
+        "spycep_7edd_native_active_site": -6.089
+      },
+      "ensemble_best_affinity_kcal_mol": -6.089,
+      "ensemble_mean_affinity_kcal_mol": -6.0495,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.30445,
+      "receptor_count": 2,
+      "rank_by_affinity": 37,
+      "rank": 21
+    },
+    {
+      "ligand_id": "cephalexin",
+      "role": null,
+      "heavy_atom_count": 24,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -7.228,
+        "spycep_7edd_native_active_site": -7.046
+      },
+      "ensemble_best_affinity_kcal_mol": -7.228,
+      "ensemble_mean_affinity_kcal_mol": -7.1370000000000005,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.30116666666666664,
+      "receptor_count": 2,
+      "rank_by_affinity": 10,
+      "rank": 22
+    },
+    {
+      "ligand_id": "warfarin",
+      "role": null,
+      "heavy_atom_count": 23,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.896,
+        "spycep_7edd_native_active_site": -6.628
+      },
+      "ensemble_best_affinity_kcal_mol": -6.896,
+      "ensemble_mean_affinity_kcal_mol": -6.7620000000000005,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.29982608695652174,
+      "receptor_count": 2,
+      "rank_by_affinity": 20,
+      "rank": 23
+    },
+    {
+      "ligand_id": "nafamostat",
+      "role": null,
+      "heavy_atom_count": 26,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -7.732,
+        "spycep_7edd_native_active_site": -7.58
+      },
+      "ensemble_best_affinity_kcal_mol": -7.732,
+      "ensemble_mean_affinity_kcal_mol": -7.656000000000001,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.2973846153846154,
+      "receptor_count": 2,
+      "rank_by_affinity": 4,
+      "rank": 24
+    },
+    {
+      "ligand_id": "propranolol",
+      "role": null,
+      "heavy_atom_count": 19,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.368,
+        "spycep_7edd_native_active_site": -5.65
+      },
+      "ensemble_best_affinity_kcal_mol": -5.65,
+      "ensemble_mean_affinity_kcal_mol": -5.509,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.2973684210526316,
+      "receptor_count": 2,
+      "rank_by_affinity": 47,
+      "rank": 25
+    },
+    {
+      "ligand_id": "diphenhydramine",
+      "role": null,
+      "heavy_atom_count": 19,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.042,
+        "spycep_7edd_native_active_site": -5.587
+      },
+      "ensemble_best_affinity_kcal_mol": -5.587,
+      "ensemble_mean_affinity_kcal_mol": -5.3145,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.29405263157894734,
+      "receptor_count": 2,
+      "rank_by_affinity": 49,
+      "rank": 26
+    },
+    {
+      "ligand_id": "ciprofloxacin",
+      "role": null,
+      "heavy_atom_count": 24,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.083,
+        "spycep_7edd_native_active_site": -6.971
+      },
+      "ensemble_best_affinity_kcal_mol": -6.971,
+      "ensemble_mean_affinity_kcal_mol": -6.527,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.2904583333333333,
+      "receptor_count": 2,
+      "rank_by_affinity": 17,
+      "rank": 27
+    },
+    {
+      "ligand_id": "amoxicillin",
+      "role": null,
+      "heavy_atom_count": 25,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -7.253,
+        "spycep_7edd_native_active_site": -6.566
+      },
+      "ensemble_best_affinity_kcal_mol": -7.253,
+      "ensemble_mean_affinity_kcal_mol": -6.9094999999999995,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.29012,
+      "receptor_count": 2,
+      "rank_by_affinity": 8,
+      "rank": 28
+    },
+    {
+      "ligand_id": "penicillin_g",
+      "role": null,
+      "heavy_atom_count": 23,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.405,
+        "spycep_7edd_native_active_site": -6.534
+      },
+      "ensemble_best_affinity_kcal_mol": -6.534,
+      "ensemble_mean_affinity_kcal_mol": -6.4695,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.2840869565217391,
+      "receptor_count": 2,
+      "rank_by_affinity": 29,
+      "rank": 29
+    },
+    {
+      "ligand_id": "celecoxib",
+      "role": null,
+      "heavy_atom_count": 26,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.626,
+        "spycep_7edd_native_active_site": -7.366
+      },
+      "ensemble_best_affinity_kcal_mol": -7.366,
+      "ensemble_mean_affinity_kcal_mol": -6.996,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.2833076923076923,
+      "receptor_count": 2,
+      "rank_by_affinity": 6,
+      "rank": 30
+    },
+    {
+      "ligand_id": "ampicillin",
+      "role": null,
+      "heavy_atom_count": 24,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.79,
+        "spycep_7edd_native_active_site": -6.484
+      },
+      "ensemble_best_affinity_kcal_mol": -6.79,
+      "ensemble_mean_affinity_kcal_mol": -6.6370000000000005,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.28291666666666665,
+      "receptor_count": 2,
+      "rank_by_affinity": 24,
+      "rank": 31
+    },
+    {
+      "ligand_id": "atropine",
+      "role": null,
+      "heavy_atom_count": 21,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.81,
+        "spycep_7edd_native_active_site": -5.939
+      },
+      "ensemble_best_affinity_kcal_mol": -5.939,
+      "ensemble_mean_affinity_kcal_mol": -5.874499999999999,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.2828095238095238,
+      "receptor_count": 2,
+      "rank_by_affinity": 41,
+      "rank": 32
+    },
+    {
+      "ligand_id": "furosemide",
+      "role": null,
+      "heavy_atom_count": 21,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.617,
+        "spycep_7edd_native_active_site": -5.906
+      },
+      "ensemble_best_affinity_kcal_mol": -5.906,
+      "ensemble_mean_affinity_kcal_mol": -5.7615,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.28123809523809523,
+      "receptor_count": 2,
+      "rank_by_affinity": 42,
+      "rank": 33
+    },
+    {
+      "ligand_id": "fluconazole",
+      "role": null,
+      "heavy_atom_count": 22,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.148,
+        "spycep_7edd_native_active_site": -6.092
+      },
+      "ensemble_best_affinity_kcal_mol": -6.148,
+      "ensemble_mean_affinity_kcal_mol": -6.119999999999999,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.27945454545454546,
+      "receptor_count": 2,
+      "rank_by_affinity": 35,
+      "rank": 34
+    },
+    {
+      "ligand_id": "prednisone",
+      "role": null,
+      "heavy_atom_count": 26,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.341,
+        "spycep_7edd_native_active_site": -7.152
+      },
+      "ensemble_best_affinity_kcal_mol": -7.152,
+      "ensemble_mean_affinity_kcal_mol": -6.7465,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.2750769230769231,
+      "receptor_count": 2,
+      "rank_by_affinity": 12,
+      "rank": 35
+    },
+    {
+      "ligand_id": "linezolid",
+      "role": null,
+      "heavy_atom_count": 24,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.388,
+        "spycep_7edd_native_active_site": -6.136
+      },
+      "ensemble_best_affinity_kcal_mol": -6.388,
+      "ensemble_mean_affinity_kcal_mol": -6.2620000000000005,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.26616666666666666,
+      "receptor_count": 2,
+      "rank_by_affinity": 31,
+      "rank": 36
+    },
+    {
+      "ligand_id": "fluoxetine",
+      "role": null,
+      "heavy_atom_count": 22,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.683,
+        "spycep_7edd_native_active_site": -5.782
+      },
+      "ensemble_best_affinity_kcal_mol": -5.782,
+      "ensemble_mean_affinity_kcal_mol": -5.7325,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.26281818181818184,
+      "receptor_count": 2,
+      "rank_by_affinity": 44,
+      "rank": 37
+    },
+    {
+      "ligand_id": "omeprazole",
+      "role": null,
+      "heavy_atom_count": 24,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.172,
+        "spycep_7edd_native_active_site": -6.058
+      },
+      "ensemble_best_affinity_kcal_mol": -6.172,
+      "ensemble_mean_affinity_kcal_mol": -6.115,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.25716666666666665,
+      "receptor_count": 2,
+      "rank_by_affinity": 34,
+      "rank": 38
+    },
+    {
+      "ligand_id": "levofloxacin",
+      "role": null,
+      "heavy_atom_count": 26,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.598,
+        "spycep_7edd_native_active_site": -6.436
+      },
+      "ensemble_best_affinity_kcal_mol": -6.598,
+      "ensemble_mean_affinity_kcal_mol": -6.5169999999999995,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.25376923076923075,
+      "receptor_count": 2,
+      "rank_by_affinity": 28,
+      "rank": 39
+    },
+    {
+      "ligand_id": "metoprolol",
+      "role": null,
+      "heavy_atom_count": 19,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -4.708,
+        "spycep_7edd_native_active_site": -4.813
+      },
+      "ensemble_best_affinity_kcal_mol": -4.813,
+      "ensemble_mean_affinity_kcal_mol": -4.7605,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.2533157894736842,
+      "receptor_count": 2,
+      "rank_by_affinity": 69,
+      "rank": 40
+    },
+    {
+      "ligand_id": "doxycycline",
+      "role": null,
+      "heavy_atom_count": 32,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -8.009,
+        "spycep_7edd_native_active_site": -7.848
+      },
+      "ensemble_best_affinity_kcal_mol": -8.009,
+      "ensemble_mean_affinity_kcal_mol": -7.9285,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.25028125,
+      "receptor_count": 2,
+      "rank_by_affinity": 3,
+      "rank": 41
+    },
+    {
+      "ligand_id": "tlck",
+      "role": null,
+      "heavy_atom_count": 21,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.241,
+        "spycep_7edd_native_active_site": -5.089
+      },
+      "ensemble_best_affinity_kcal_mol": -5.241,
+      "ensemble_mean_affinity_kcal_mol": -5.165,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.24957142857142856,
+      "receptor_count": 2,
+      "rank_by_affinity": 60,
+      "rank": 42
+    },
+    {
+      "ligand_id": "dexamethasone",
+      "role": null,
+      "heavy_atom_count": 28,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.873,
+        "spycep_7edd_native_active_site": -6.801
+      },
+      "ensemble_best_affinity_kcal_mol": -6.873,
+      "ensemble_mean_affinity_kcal_mol": -6.837,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.24546428571428572,
+      "receptor_count": 2,
+      "rank_by_affinity": 21,
+      "rank": 43
+    },
+    {
+      "ligand_id": "pentamidine",
+      "role": null,
+      "heavy_atom_count": 25,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.007,
+        "spycep_7edd_native_active_site": -6.042
+      },
+      "ensemble_best_affinity_kcal_mol": -6.042,
+      "ensemble_mean_affinity_kcal_mol": -5.5245,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.24168,
+      "receptor_count": 2,
+      "rank_by_affinity": 38,
+      "rank": 44
+    },
+    {
+      "ligand_id": "gabexate",
+      "role": null,
+      "heavy_atom_count": 23,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.417,
+        "spycep_7edd_native_active_site": -5.173
+      },
+      "ensemble_best_affinity_kcal_mol": -5.417,
+      "ensemble_mean_affinity_kcal_mol": -5.295,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.23552173913043478,
+      "receptor_count": 2,
+      "rank_by_affinity": 54,
+      "rank": 45
+    },
+    {
+      "ligand_id": "melagatran",
+      "role": null,
+      "heavy_atom_count": 31,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -7.028,
+        "spycep_7edd_native_active_site": -7.28
+      },
+      "ensemble_best_affinity_kcal_mol": -7.28,
+      "ensemble_mean_affinity_kcal_mol": -7.154,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.23483870967741935,
+      "receptor_count": 2,
+      "rank_by_affinity": 7,
+      "rank": 46
+    },
+    {
+      "ligand_id": "tpck",
+      "role": null,
+      "heavy_atom_count": 23,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.393,
+        "spycep_7edd_native_active_site": -5.36
+      },
+      "ensemble_best_affinity_kcal_mol": -5.393,
+      "ensemble_mean_affinity_kcal_mol": -5.3765,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.23447826086956522,
+      "receptor_count": 2,
+      "rank_by_affinity": 55,
+      "rank": 47
+    },
+    {
+      "ligand_id": "simvastatin",
+      "role": null,
+      "heavy_atom_count": 30,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.952,
+        "spycep_7edd_native_active_site": -6.963
+      },
+      "ensemble_best_affinity_kcal_mol": -6.963,
+      "ensemble_mean_affinity_kcal_mol": -6.9575,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.2321,
+      "receptor_count": 2,
+      "rank_by_affinity": 19,
+      "rank": 48
+    },
+    {
+      "ligand_id": "dabigatran",
+      "role": null,
+      "heavy_atom_count": 35,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -8.084,
+        "spycep_7edd_native_active_site": -7.662
+      },
+      "ensemble_best_affinity_kcal_mol": -8.084,
+      "ensemble_mean_affinity_kcal_mol": -7.872999999999999,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.23097142857142855,
+      "receptor_count": 2,
+      "rank_by_affinity": 1,
+      "rank": 49
+    },
+    {
+      "ligand_id": "ccg_102487",
+      "role": null,
+      "heavy_atom_count": 31,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -7.073,
+        "spycep_7edd_native_active_site": -7.143
+      },
+      "ensemble_best_affinity_kcal_mol": -7.143,
+      "ensemble_mean_affinity_kcal_mol": -7.1080000000000005,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.23041935483870968,
+      "receptor_count": 2,
+      "rank_by_affinity": 13,
+      "rank": 50
+    },
+    {
+      "ligand_id": "ranitidine",
+      "role": null,
+      "heavy_atom_count": 21,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -4.584,
+        "spycep_7edd_native_active_site": -4.836
+      },
+      "ensemble_best_affinity_kcal_mol": -4.836,
+      "ensemble_mean_affinity_kcal_mol": -4.71,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.2302857142857143,
+      "receptor_count": 2,
+      "rank_by_affinity": 67,
+      "rank": 51
+    },
+    {
+      "ligand_id": "camostat",
+      "role": null,
+      "heavy_atom_count": 29,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.385,
+        "spycep_7edd_native_active_site": -6.676
+      },
+      "ensemble_best_affinity_kcal_mol": -6.676,
+      "ensemble_mean_affinity_kcal_mol": -6.5305,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.23020689655172413,
+      "receptor_count": 2,
+      "rank_by_affinity": 26,
+      "rank": 52
+    },
+    {
+      "ligand_id": "sivelestat",
+      "role": null,
+      "heavy_atom_count": 30,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.701,
+        "spycep_7edd_native_active_site": -6.427
+      },
+      "ensemble_best_affinity_kcal_mol": -6.701,
+      "ensemble_mean_affinity_kcal_mol": -6.564,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.22336666666666666,
+      "receptor_count": 2,
+      "rank_by_affinity": 25,
+      "rank": 53
+    },
+    {
+      "ligand_id": "ccg_2979",
+      "role": null,
+      "heavy_atom_count": 28,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.164,
+        "spycep_7edd_native_active_site": -6.231
+      },
+      "ensemble_best_affinity_kcal_mol": -6.231,
+      "ensemble_mean_affinity_kcal_mol": -6.1975,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.22253571428571428,
+      "receptor_count": 2,
+      "rank_by_affinity": 32,
+      "rank": 54
+    },
+    {
+      "ligand_id": "methotrexate",
+      "role": null,
+      "heavy_atom_count": 33,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -7.23,
+        "spycep_7edd_native_active_site": -7.193
+      },
+      "ensemble_best_affinity_kcal_mol": -7.23,
+      "ensemble_mean_affinity_kcal_mol": -7.2115,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.21909090909090911,
+      "receptor_count": 2,
+      "rank_by_affinity": 9,
+      "rank": 55
+    },
+    {
+      "ligand_id": "losartan",
+      "role": null,
+      "heavy_atom_count": 30,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.446,
+        "spycep_7edd_native_active_site": -6.054
+      },
+      "ensemble_best_affinity_kcal_mol": -6.446,
+      "ensemble_mean_affinity_kcal_mol": -6.25,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.21486666666666665,
+      "receptor_count": 2,
+      "rank_by_affinity": 30,
+      "rank": 56
+    },
+    {
+      "ligand_id": "loratadine",
+      "role": null,
+      "heavy_atom_count": 27,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.687,
+        "spycep_7edd_native_active_site": -5.791
+      },
+      "ensemble_best_affinity_kcal_mol": -5.791,
+      "ensemble_mean_affinity_kcal_mol": -5.739000000000001,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.2144814814814815,
+      "receptor_count": 2,
+      "rank_by_affinity": 43,
+      "rank": 57
+    },
+    {
+      "ligand_id": "clindamycin",
+      "role": null,
+      "heavy_atom_count": 27,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.561,
+        "spycep_7edd_native_active_site": -5.764
+      },
+      "ensemble_best_affinity_kcal_mol": -5.764,
+      "ensemble_mean_affinity_kcal_mol": -5.6625,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.2134814814814815,
+      "receptor_count": 2,
+      "rank_by_affinity": 46,
+      "rank": 58
+    },
+    {
+      "ligand_id": "amlodipine",
+      "role": null,
+      "heavy_atom_count": 28,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.964,
+        "spycep_7edd_native_active_site": -5.458
+      },
+      "ensemble_best_affinity_kcal_mol": -5.964,
+      "ensemble_mean_affinity_kcal_mol": -5.711,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.21300000000000002,
+      "receptor_count": 2,
+      "rank_by_affinity": 39,
+      "rank": 59
+    },
+    {
+      "ligand_id": "sildenafil",
+      "role": null,
+      "heavy_atom_count": 33,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.969,
+        "spycep_7edd_native_active_site": -6.724
+      },
+      "ensemble_best_affinity_kcal_mol": -6.969,
+      "ensemble_mean_affinity_kcal_mol": -6.846500000000001,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.2111818181818182,
+      "receptor_count": 2,
+      "rank_by_affinity": 18,
+      "rank": 60
+    },
+    {
+      "ligand_id": "argatroban",
+      "role": null,
+      "heavy_atom_count": 35,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.966,
+        "spycep_7edd_native_active_site": -7.085
+      },
+      "ensemble_best_affinity_kcal_mol": -7.085,
+      "ensemble_mean_affinity_kcal_mol": -7.0255,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.20242857142857143,
+      "receptor_count": 2,
+      "rank_by_affinity": 14,
+      "rank": 61
+    },
+    {
+      "ligand_id": "lisinopril",
+      "role": null,
+      "heavy_atom_count": 29,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.755,
+        "spycep_7edd_native_active_site": -5.775
+      },
+      "ensemble_best_affinity_kcal_mol": -5.775,
+      "ensemble_mean_affinity_kcal_mol": -5.765000000000001,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.19913793103448277,
+      "receptor_count": 2,
+      "rank_by_affinity": 45,
+      "rank": 62
+    },
+    {
+      "ligand_id": "elastatinal",
+      "role": null,
+      "heavy_atom_count": 36,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.68,
+        "spycep_7edd_native_active_site": -6.866
+      },
+      "ensemble_best_affinity_kcal_mol": -6.866,
+      "ensemble_mean_affinity_kcal_mol": -6.773,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.1907222222222222,
+      "receptor_count": 2,
+      "rank_by_affinity": 22,
+      "rank": 63
+    },
+    {
+      "ligand_id": "colchicine",
+      "role": null,
+      "heavy_atom_count": 29,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.354,
+        "spycep_7edd_native_active_site": -4.928
+      },
+      "ensemble_best_affinity_kcal_mol": -5.354,
+      "ensemble_mean_affinity_kcal_mol": -5.141,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.18462068965517242,
+      "receptor_count": 2,
+      "rank_by_affinity": 57,
+      "rank": 64
+    },
+    {
+      "ligand_id": "montelukast",
+      "role": null,
+      "heavy_atom_count": 41,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -7.552,
+        "spycep_7edd_native_active_site": -6.732
+      },
+      "ensemble_best_affinity_kcal_mol": -7.552,
+      "ensemble_mean_affinity_kcal_mol": -7.1419999999999995,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.1841951219512195,
+      "receptor_count": 2,
+      "rank_by_affinity": 5,
+      "rank": 65
+    },
+    {
+      "ligand_id": "leupeptin",
+      "role": null,
+      "heavy_atom_count": 30,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.166,
+        "spycep_7edd_native_active_site": -5.519
+      },
+      "ensemble_best_affinity_kcal_mol": -5.519,
+      "ensemble_mean_affinity_kcal_mol": -5.3425,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.18396666666666667,
+      "receptor_count": 2,
+      "rank_by_affinity": 50,
+      "rank": 66
+    },
+    {
+      "ligand_id": "chymostatin",
+      "role": null,
+      "heavy_atom_count": 44,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.729,
+        "spycep_7edd_native_active_site": -8.022
+      },
+      "ensemble_best_affinity_kcal_mol": -8.022,
+      "ensemble_mean_affinity_kcal_mol": -7.375500000000001,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.18231818181818182,
+      "receptor_count": 2,
+      "rank_by_affinity": 2,
+      "rank": 67
+    },
+    {
+      "ligand_id": "atorvastatin",
+      "role": null,
+      "heavy_atom_count": 41,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.607,
+        "spycep_7edd_native_active_site": -7.208
+      },
+      "ensemble_best_affinity_kcal_mol": -7.208,
+      "ensemble_mean_affinity_kcal_mol": -6.907500000000001,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.1758048780487805,
+      "receptor_count": 2,
+      "rank_by_affinity": 11,
+      "rank": 68
+    },
+    {
+      "ligand_id": "antipain",
+      "role": null,
+      "heavy_atom_count": 43,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.876,
+        "spycep_7edd_native_active_site": -7.083
+      },
+      "ensemble_best_affinity_kcal_mol": -7.083,
+      "ensemble_mean_affinity_kcal_mol": -6.4795,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.16472093023255815,
+      "receptor_count": 2,
+      "rank_by_affinity": 15,
+      "rank": 69
+    },
+    {
+      "ligand_id": "ritonavir",
+      "role": null,
+      "heavy_atom_count": 50,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -6.846,
+        "spycep_7edd_native_active_site": -6.242
+      },
+      "ensemble_best_affinity_kcal_mol": -6.846,
+      "ensemble_mean_affinity_kcal_mol": -6.5440000000000005,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.13692000000000001,
+      "receptor_count": 2,
+      "rank_by_affinity": 23,
+      "rank": 70
+    },
+    {
+      "ligand_id": "erythromycin",
+      "role": null,
+      "heavy_atom_count": 51,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.276,
+        "spycep_7edd_native_active_site": -4.556
+      },
+      "ensemble_best_affinity_kcal_mol": -5.276,
+      "ensemble_mean_affinity_kcal_mol": -4.916,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.10345098039215686,
+      "receptor_count": 2,
+      "rank_by_affinity": 59,
+      "rank": 71
+    },
+    {
+      "ligand_id": "azithromycin",
+      "role": null,
+      "heavy_atom_count": 52,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.285,
+        "spycep_7edd_native_active_site": -4.682
+      },
+      "ensemble_best_affinity_kcal_mol": -5.285,
+      "ensemble_mean_affinity_kcal_mol": -4.9835,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.10163461538461539,
+      "receptor_count": 2,
+      "rank_by_affinity": 58,
+      "rank": 72
+    },
+    {
+      "ligand_id": "vancomycin",
+      "role": null,
+      "heavy_atom_count": 101,
+      "per_receptor_best_affinity": {
+        "spycep_5xya_aes_active_site": -5.457,
+        "spycep_7edd_native_active_site": 2.971
+      },
+      "ensemble_best_affinity_kcal_mol": -5.457,
+      "ensemble_mean_affinity_kcal_mol": -1.2429999999999999,
+      "ligand_efficiency_kcal_mol_per_heavy_atom": -0.05402970297029703,
+      "receptor_count": 2,
+      "rank_by_affinity": 52,
+      "rank": 73
+    }
+  ],
+  "pose_interactions": [
+    {
+      "ligand_id": "benzamidine",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -4.9,
+      "contacted_active_site_residues": [],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "benzamidine",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -4.653,
+      "contacted_active_site_residues": [
+        "A:151:ASP"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "4_aminobenzamidine",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -4.764,
+      "contacted_active_site_residues": [],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "4_aminobenzamidine",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -4.667,
+      "contacted_active_site_residues": [
+        "A:151:ASP"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "pentamidine",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.007,
+      "contacted_active_site_residues": [],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "pentamidine",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.042,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "diminazene",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -7.016,
+      "contacted_active_site_residues": [
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "diminazene",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.597,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "leupeptin",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.166,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "leupeptin",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -5.519,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "antipain",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.876,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "antipain",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -7.083,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "chymostatin",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.729,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "chymostatin",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -8.022,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "elastatinal",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.68,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "elastatinal",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.866,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "aebsf",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -4.641,
+      "contacted_active_site_residues": [
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "aebsf",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -4.81,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "pmsf",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -4.253,
+      "contacted_active_site_residues": [
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "pmsf",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -4.543,
+      "contacted_active_site_residues": [
+        "A:151:ASP"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "apmsf",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.455,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "apmsf",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -5.301,
+      "contacted_active_site_residues": [
+        "A:151:ASP"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "tpck",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.393,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "tpck",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -5.36,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "tlck",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.241,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "tlck",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -5.089,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "dci",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -4.769,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "dci",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -4.93,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "4_guanidinobenzoic_acid",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -4.981,
+      "contacted_active_site_residues": [],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "4_guanidinobenzoic_acid",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -5.487,
+      "contacted_active_site_residues": [
+        "A:151:ASP"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "melagatran",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -7.028,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "melagatran",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -7.28,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "ccg_2979",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.164,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "ccg_2979",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.231,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "ccg_102487",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -7.073,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "ccg_102487",
+      "set": "custom_anti_virulence",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -7.143,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "penicillin_g",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.405,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "penicillin_g",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.534,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "amoxicillin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -7.253,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "amoxicillin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.566,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "ampicillin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.79,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "ampicillin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.484,
+      "contacted_active_site_residues": [
+        "A:151:ASP"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "cephalexin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -7.228,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "cephalexin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -7.046,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "clindamycin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.561,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "clindamycin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -5.764,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "azithromycin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.285,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "azithromycin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -4.682,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "erythromycin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.276,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "erythromycin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -4.556,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "vancomycin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.457,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "vancomycin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": 2.971,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "linezolid",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.388,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "linezolid",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.136,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "doxycycline",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -8.009,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "doxycycline",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -7.848,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "nafamostat",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -7.732,
+      "contacted_active_site_residues": [
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "nafamostat",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -7.58,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "camostat",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.385,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "camostat",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.676,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "gabexate",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.417,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "gabexate",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -5.173,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "argatroban",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.966,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "argatroban",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -7.085,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "dabigatran",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -8.084,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "dabigatran",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -7.662,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "sivelestat",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.701,
+      "contacted_active_site_residues": [
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "sivelestat",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.427,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "ritonavir",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.846,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "ritonavir",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.242,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "aspirin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -4.896,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "aspirin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -4.928,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "ibuprofen",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.227,
+      "contacted_active_site_residues": [
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "ibuprofen",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -5.367,
+      "contacted_active_site_residues": [
+        "A:151:ASP"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "naproxen",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.739,
+      "contacted_active_site_residues": [
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "naproxen",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -5.958,
+      "contacted_active_site_residues": [
+        "A:151:ASP"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "acetaminophen",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -4.541,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "acetaminophen",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -5.216,
+      "contacted_active_site_residues": [
+        "A:151:ASP"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "metformin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -4.475,
+      "contacted_active_site_residues": [
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "metformin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -4.313,
+      "contacted_active_site_residues": [
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "atorvastatin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.607,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "atorvastatin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -7.208,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "simvastatin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.952,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "simvastatin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.963,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "omeprazole",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.172,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "omeprazole",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.058,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "warfarin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.896,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "warfarin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.628,
+      "contacted_active_site_residues": [
+        "A:151:ASP"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "furosemide",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.617,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "furosemide",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -5.906,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "lisinopril",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.755,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "lisinopril",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -5.775,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "losartan",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.446,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "losartan",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.054,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "metoprolol",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -4.708,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "metoprolol",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -4.813,
+      "contacted_active_site_residues": [
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "amlodipine",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.964,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "amlodipine",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -5.458,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "hydrochlorothiazide",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.08,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "hydrochlorothiazide",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.107,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "sertraline",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.01,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "sertraline",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.089,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "fluoxetine",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.683,
+      "contacted_active_site_residues": [
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "fluoxetine",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -5.782,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "gabapentin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -4.414,
+      "contacted_active_site_residues": [],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "gabapentin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -4.882,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "prednisone",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.341,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "prednisone",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -7.152,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "dexamethasone",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.873,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "dexamethasone",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.801,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "ciprofloxacin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.083,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "ciprofloxacin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.971,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "levofloxacin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.598,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "levofloxacin",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.436,
+      "contacted_active_site_residues": [
+        "A:151:ASP"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "fluconazole",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.148,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "fluconazole",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.092,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "acyclovir",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.648,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "acyclovir",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -5.176,
+      "contacted_active_site_residues": [
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "loratadine",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.687,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "loratadine",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -5.791,
+      "contacted_active_site_residues": [
+        "A:151:ASP"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "diphenhydramine",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.042,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "diphenhydramine",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -5.587,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "montelukast",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -7.552,
+      "contacted_active_site_residues": [
+        "A:151:ASP"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "montelukast",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.732,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "allopurinol",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -4.818,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "allopurinol",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -4.467,
+      "contacted_active_site_residues": [
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "colchicine",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.354,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "colchicine",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -4.928,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "methotrexate",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -7.23,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "methotrexate",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -7.193,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "sildenafil",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.969,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "sildenafil",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.724,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "caffeine",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -4.979,
+      "contacted_active_site_residues": [],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "caffeine",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -4.512,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "atropine",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.81,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "atropine",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -5.939,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "morphine",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.657,
+      "contacted_active_site_residues": [
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "morphine",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.366,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "propranolol",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -5.368,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "propranolol",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -5.65,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "ranitidine",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -4.584,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "ranitidine",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -4.836,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    },
+    {
+      "ligand_id": "diclofenac",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.208,
+      "contacted_active_site_residues": [
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "diclofenac",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -6.035,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS"
+      ],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "celecoxib",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_5xya_aes_active_site",
+      "best_affinity_kcal_mol": -6.626,
+      "contacted_active_site_residues": [],
+      "contacts_catalytic_triad": false
+    },
+    {
+      "ligand_id": "celecoxib",
+      "set": "fda_comparator",
+      "pocket_id": "spycep_7edd_native_active_site",
+      "best_affinity_kcal_mol": -7.366,
+      "contacted_active_site_residues": [
+        "A:151:ASP",
+        "A:279:HIS",
+        "A:617:SER"
+      ],
+      "contacts_catalytic_triad": true
+    }
+  ]
+}
