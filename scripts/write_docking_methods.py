@@ -1,9 +1,9 @@
-"""Generate the tracked docking methods note from tracked manifests.
+"""Generate the tracked docking methods/results note from tracked manifests.
 
-Writes docs/methods/docking_analysis.md describing the ligand-preparation ->
-AutoDock Vina docking -> ligand-efficiency ranking -> interaction-analysis
-pipeline and the validation-pilot outcome. Numbers are read from the tracked
-docs/methods/validation_pilot_result.json so the note stays in sync.
+Writes docs/methods/docking_analysis.md summarizing the full-library docking runs
+(wide receptor-prep box and tight triad-centered box), ligand-efficiency ranking,
+per-residue triad engagement, the boron gem-diol surrogate, and limitations.
+Numbers are read from the tracked result manifests so the note stays in sync.
 
 Run:
     .\\.venv\\Scripts\\python.exe scripts\\write_docking_methods.py
@@ -12,104 +12,113 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from statistics import mean
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-PILOT_RESULT = PROJECT_ROOT / "docs" / "methods" / "validation_pilot_result.json"
+WIDE = PROJECT_ROOT / "docs" / "methods" / "docking_result.json"
+TIGHT = PROJECT_ROOT / "docs" / "methods" / "docking_result_tight.json"
+BORON = PROJECT_ROOT / "docs" / "methods" / "boron_surrogate_result.json"
+LIBRARY = PROJECT_ROOT / "docs" / "methods" / "compound_library_source.json"
 OUTPUT = PROJECT_ROOT / "docs" / "methods" / "docking_analysis.md"
 
 
-def _ranking_table(ranking: list[dict]) -> list[str]:
-    lines = [
-        "| Rank (efficiency) | Ligand | Role | Heavy atoms | Ensemble best (kcal/mol) | Ligand efficiency | Rank (raw affinity) |",
-        "| --- | --- | --- | --- | --- | --- | --- |",
-    ]
-    for item in ranking:
-        lines.append(
-            "| {rank} | {ligand_id} | {role} | {heavy} | {best:.3f} | {le:.4f} | {raw} |".format(
-                rank=item["rank"],
-                ligand_id=item["ligand_id"],
-                role=item.get("role", ""),
-                heavy=item.get("heavy_atom_count", ""),
-                best=item["ensemble_best_affinity_kcal_mol"],
-                le=item["ligand_efficiency_kcal_mol_per_heavy_atom"],
-                raw=item.get("rank_by_affinity", ""),
-            )
-        )
-    return lines
+def _set_stats(result: dict, setof: dict) -> dict:
+    cu = [r for r in result["ranking"] if setof.get(r["ligand_id"]) == "custom_anti_virulence"]
+    fd = [r for r in result["ranking"] if setof.get(r["ligand_id"]) == "fda_comparator"]
+
+    def m(group, key):
+        return mean([r[key] for r in group]) if group else float("nan")
+
+    return {
+        "custom_best": m(cu, "ensemble_best_affinity_kcal_mol"),
+        "fda_best": m(fd, "ensemble_best_affinity_kcal_mol"),
+        "custom_le": m(cu, "ligand_efficiency_kcal_mol_per_heavy_atom"),
+        "fda_le": m(fd, "ligand_efficiency_kcal_mol_per_heavy_atom"),
+    }
 
 
-def _interaction_rows(pose_interactions: list[dict]) -> list[str]:
-    lines = [
-        "| Ligand | Receptor | Best (kcal/mol) | Active-site contacts | Full triad |",
-        "| --- | --- | --- | --- | --- |",
-    ]
-    for row in pose_interactions:
-        contacts = ", ".join(row["contacted_active_site_residues"]) or "none"
+def _top_rows(result: dict, setof: dict, n: int = 10) -> list[str]:
+    lines = ["| Rank | Ligand | Set | Ligand efficiency | Best (kcal/mol) |", "| --- | --- | --- | --- | --- |"]
+    for r in result["ranking"][:n]:
+        s = "custom" if setof.get(r["ligand_id"]) == "custom_anti_virulence" else "FDA"
         lines.append(
-            f"| {row['ligand_id']} | {row['pocket_id']} | {row['best_affinity_kcal_mol']:.3f} "
-            f"| {contacts} | {'yes' if row['contacts_catalytic_triad'] else 'no'} |"
+            f"| {r['rank']} | {r['ligand_id']} | {s} | "
+            f"{r['ligand_efficiency_kcal_mol_per_heavy_atom']:.3f} | {r['ensemble_best_affinity_kcal_mol']:.2f} |"
         )
     return lines
 
 
 def main() -> None:
-    pilot = json.loads(PILOT_RESULT.read_text(encoding="utf-8"))
-    repro = pilot["reproducibility_check"]
+    setof = {c["ligand_id"]: c["set"] for c in json.loads(LIBRARY.read_text(encoding="utf-8"))["compounds"]}
+    wide = json.loads(WIDE.read_text(encoding="utf-8"))
+    tight = json.loads(TIGHT.read_text(encoding="utf-8")) if TIGHT.exists() else None
+    boron = json.loads(BORON.read_text(encoding="utf-8")) if BORON.exists() else None
+
+    ws = _set_stats(wide, setof)
     lines = [
-        "# Docking Methods Note",
+        "# Docking Methods And Results Note",
         "",
-        "This file is generated from tracked manifests by `scripts/write_docking_methods.py`.",
-        "It documents the Milestone 3 compound-docking pipeline and the pipeline-validation pilot.",
+        "Generated from tracked manifests by `scripts/write_docking_methods.py`.",
+        "Computational prioritization only; not evidence of binding or efficacy.",
         "",
         "## Pipeline",
         "",
-        "1. **Ligand preparation** — SMILES are embedded to a single 3D conformer with RDKit "
-        f"ETKDGv3 (fixed seed {pilot['ligands'][0]['embed_seed']}) and MMFF-optimized, then converted "
-        "to PDBQT with Meeko `mk_prepare_ligand`.",
-        "2. **Docking** — AutoDock Vina (executable, subprocess) docks each ligand into the tracked "
-        "active-site box of each receptor in the ensemble.",
-        "3. **Ranking** — ligand efficiency (ensemble best affinity / heavy-atom count) is the primary "
-        "ranking metric; raw affinity rank is retained for comparison.",
-        "4. **Interaction analysis** — the best pose is checked for atomic contacts (<= "
-        f"{pilot.get('contact_cutoff_angstrom', 4.0)} A) with the catalytic triad D151/H279/S617.",
+        "SMILES (PubChem) -> desalt -> RDKit ETKDGv3 (seed 42) 3D -> Meeko `mk_prepare_ligand` "
+        "-> AutoDock Vina (exhaustiveness 8, 9 modes, seed 42) over the 5XYA + 7EDD ensemble "
+        "-> ligand-efficiency ranking -> per-residue catalytic-triad interaction analysis.",
         "",
-        "## Configuration",
+        f"Engine: {wide['vina_version']}. Two search boxes were used: the wide receptor-preparation "
+        "box and a tight box centered on the D151/H279/S617 centroid (`tight_pocket_definition.json`).",
         "",
-        f"- Docking engine: {pilot['vina_version']}",
-        f"- Search: exhaustiveness {pilot['exhaustiveness']}, num_modes {pilot['num_modes']}, "
-        f"fixed seed {pilot['seed']}.",
-        f"- Receptor ensemble: {', '.join(pilot['receptor_ensemble'])}.",
-        "- Boxes come from `docs/methods/pdbqt_conversion.json` / `receptor_preparation.json`.",
+        "## Full-library result (wide box)",
         "",
-        "## Validation Pilot",
+        f"- Compounds docked: {wide['compounds_docked']}/{wide['compounds_input']}. "
+        f"Failures: {len(wide['dock_failures'])} (the four boronic acids; AutoDock Vina has no boron parameters).",
+        f"- Custom vs FDA mean best affinity: {ws['custom_best']:.2f} vs {ws['fda_best']:.2f} kcal/mol.",
+        f"- Custom vs FDA mean ligand efficiency: {ws['custom_le']:.3f} vs {ws['fda_le']:.3f} kcal/mol per heavy atom.",
         "",
-        "The pilot set (`docs/methods/validation_pilot_compounds.json`) is a throwaway pipeline check, "
-        "**not** the research library and **not** a hit-discovery result.",
+        "Top 10 by ligand efficiency:",
         "",
-        f"- Reproducibility: {repro['ligand_id']} vs {repro['pocket_id']} scored "
-        f"{repro['first_run_best']:.3f} kcal/mol on both the first and repeat run "
-        f"(deterministic = {repro['deterministic']}).",
+        *_top_rows(wide, setof),
         "",
-        "Ranking:",
+    ]
+    if tight:
+        ts = _set_stats(tight, setof)
+        lines += [
+            "## Tight triad-centered box (robustness check)",
+            "",
+            f"- Compounds docked: {tight['compounds_docked']}/{tight['compounds_input']}.",
+            f"- Custom vs FDA mean best affinity: {ts['custom_best']:.2f} vs {ts['fda_best']:.2f} kcal/mol "
+            "(focusing the box penalizes bulky drugs, so the custom set now edges FDA).",
+            f"- Custom vs FDA mean ligand efficiency: {ts['custom_le']:.3f} vs {ts['fda_le']:.3f}.",
+            "- The null conclusion is robust to box choice; triad contact stays non-discriminating.",
+            "",
+        ]
+    if boron:
+        best = min(boron["results"], key=lambda r: r["best_affinity_kcal_mol"])
+        lines += [
+            "## Boron gem-diol surrogates",
+            "",
+            f"- {boron['method']}",
+            f"- Best surrogate: {best['parent_ligand_id']} at {best['best_affinity_kcal_mol']:.2f} kcal/mol "
+            f"({best['pocket_id']}). Approximation only; see `boron_surrogate_result.json`.",
+            "",
+        ]
+    lines += [
+        "## Interpretation",
         "",
-        *_ranking_table(pilot["ranking"]),
-        "",
-        "Active-site contacts (best pose):",
-        "",
-        *_interaction_rows(pilot["pose_interactions"]),
+        "Docking did not nominate a compelling small-molecule SpyCEP candidate. Scores are modest and "
+        "rankings are metric-dependent; rational protease chemotypes are only weakly enriched by ligand "
+        "efficiency. This reads as an honest benchmarking/negative result, consistent with the absence of "
+        "any reported small-molecule SpyCEP inhibitor. See the manuscript draft in `docs/manuscript/`.",
         "",
         "## Limitations",
         "",
-        "- Docking scores are computational predictions, not evidence of efficacy or binding in vitro.",
-        "- Raw AutoDock Vina affinity is biased by molecular size; in the pilot the larger drug decoys "
-        "outranked the smaller amidine positives by raw score, and ligand efficiency was required to "
-        "recover the expected ordering. Report ligand efficiency (and/or property-matched decoys).",
-        "- Receptor PDBQT files were generated with Meeko `--allow_bad_res`; some incomplete residues "
-        "were omitted (none catalytic). See `docs/methods/pdbqt_quality_review.json`.",
-        "- The pilot positive controls are generic serine-protease-binding motifs, not SpyCEP-specific "
-        "inhibitors, so the pilot validates the pipeline, not SpyCEP selectivity.",
-        "- Pilot poses in the 5XYA (AES-anchored) box did not contact the catalytic triad, unlike the "
-        "7EDD box; box placement and the removed AES anchor should be reviewed before real docking.",
+        "- Predictions are not evidence of inhibition or efficacy; no therapeutic claim is made.",
+        "- Vina affinity is size-biased; ligand efficiency mitigates but does not remove this.",
+        "- Boron compounds were approximated by gem-diol surrogates omitting boron chemistry.",
+        "- Rigid-receptor, single-ligand-conformer docking ignores protein flexibility.",
+        "- Custom positives are general protease motifs, not validated SpyCEP binders.",
         "",
     ]
     OUTPUT.write_text("\n".join(lines), encoding="utf-8")

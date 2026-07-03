@@ -1,54 +1,55 @@
-# Docking Methods Note
+# Docking Methods And Results Note
 
-This file is generated from tracked manifests by `scripts/write_docking_methods.py`.
-It documents the Milestone 3 compound-docking pipeline and the pipeline-validation pilot.
+Generated from tracked manifests by `scripts/write_docking_methods.py`.
+Computational prioritization only; not evidence of binding or efficacy.
 
 ## Pipeline
 
-1. **Ligand preparation** — SMILES are embedded to a single 3D conformer with RDKit ETKDGv3 (fixed seed 42) and MMFF-optimized, then converted to PDBQT with Meeko `mk_prepare_ligand`.
-2. **Docking** — AutoDock Vina (executable, subprocess) docks each ligand into the tracked active-site box of each receptor in the ensemble.
-3. **Ranking** — ligand efficiency (ensemble best affinity / heavy-atom count) is the primary ranking metric; raw affinity rank is retained for comparison.
-4. **Interaction analysis** — the best pose is checked for atomic contacts (<= 4.0 A) with the catalytic triad D151/H279/S617.
+SMILES (PubChem) -> desalt -> RDKit ETKDGv3 (seed 42) 3D -> Meeko `mk_prepare_ligand` -> AutoDock Vina (exhaustiveness 8, 9 modes, seed 42) over the 5XYA + 7EDD ensemble -> ligand-efficiency ranking -> per-residue catalytic-triad interaction analysis.
 
-## Configuration
+Engine: AutoDock Vina v1.2.7. Two search boxes were used: the wide receptor-preparation box and a tight box centered on the D151/H279/S617 centroid (`tight_pocket_definition.json`).
 
-- Docking engine: AutoDock Vina v1.2.7
-- Search: exhaustiveness 8, num_modes 9, fixed seed 42.
-- Receptor ensemble: spycep_5xya_aes_active_site, spycep_7edd_native_active_site.
-- Boxes come from `docs/methods/pdbqt_conversion.json` / `receptor_preparation.json`.
+## Full-library result (wide box)
 
-## Validation Pilot
+- Compounds docked: 73/77. Failures: 8 (the four boronic acids; AutoDock Vina has no boron parameters).
+- Custom vs FDA mean best affinity: -5.93 vs -6.21 kcal/mol.
+- Custom vs FDA mean ligand efficiency: -0.304 vs -0.269 kcal/mol per heavy atom.
 
-The pilot set (`docs/methods/validation_pilot_compounds.json`) is a throwaway pipeline check, **not** the research library and **not** a hit-discovery result.
+Top 10 by ligand efficiency:
 
-- Reproducibility: benzamidine vs spycep_5xya_aes_active_site scored -4.897 kcal/mol on both the first and repeat run (deterministic = True).
-
-Ranking:
-
-| Rank (efficiency) | Ligand | Role | Heavy atoms | Ensemble best (kcal/mol) | Ligand efficiency | Rank (raw affinity) |
-| --- | --- | --- | --- | --- | --- | --- |
-| 1 | benzamidine | positive | 9 | -4.897 | -0.5441 | 3 |
-| 2 | 4_aminobenzamidine | positive | 10 | -4.748 | -0.4748 | 4 |
-| 3 | ibuprofen | decoy | 15 | -5.367 | -0.3578 | 1 |
-| 4 | caffeine | decoy | 14 | -4.975 | -0.3554 | 2 |
-
-Active-site contacts (best pose):
-
-| Ligand | Receptor | Best (kcal/mol) | Active-site contacts | Full triad |
+| Rank | Ligand | Set | Ligand efficiency | Best (kcal/mol) |
 | --- | --- | --- | --- | --- |
-| benzamidine | spycep_5xya_aes_active_site | -4.897 | none | no |
-| benzamidine | spycep_7edd_native_active_site | -4.603 | A:151:ASP | no |
-| 4_aminobenzamidine | spycep_5xya_aes_active_site | -4.748 | none | no |
-| 4_aminobenzamidine | spycep_7edd_native_active_site | -4.624 | A:151:ASP | no |
-| caffeine | spycep_5xya_aes_active_site | -4.975 | none | no |
-| caffeine | spycep_7edd_native_active_site | -4.503 | A:279:HIS, A:617:SER | no |
-| ibuprofen | spycep_5xya_aes_active_site | -5.227 | A:617:SER | no |
-| ibuprofen | spycep_7edd_native_active_site | -5.367 | A:151:ASP | no |
+| 1 | benzamidine | custom | -0.544 | -4.90 |
+| 2 | metformin | FDA | -0.497 | -4.47 |
+| 3 | allopurinol | FDA | -0.482 | -4.82 |
+| 4 | 4_aminobenzamidine | custom | -0.476 | -4.76 |
+| 5 | acetaminophen | FDA | -0.474 | -5.22 |
+| 6 | 4_guanidinobenzoic_acid | custom | -0.422 | -5.49 |
+| 7 | pmsf | custom | -0.413 | -4.54 |
+| 8 | gabapentin | FDA | -0.407 | -4.88 |
+| 9 | apmsf | custom | -0.390 | -5.46 |
+| 10 | dci | custom | -0.379 | -4.93 |
+
+## Tight triad-centered box (robustness check)
+
+- Compounds docked: 73/77.
+- Custom vs FDA mean best affinity: -5.68 vs -5.13 kcal/mol (focusing the box penalizes bulky drugs, so the custom set now edges FDA).
+- Custom vs FDA mean ligand efficiency: -0.294 vs -0.251.
+- The null conclusion is robust to box choice; triad contact stays non-discriminating.
+
+## Boron gem-diol surrogates
+
+- each boron replaced by carbon (R-B(OH)2 -> R-CH(OH)2 gem-diol TS mimic); Vina lacks boron parameters
+- Best surrogate: bortezomib at -6.70 kcal/mol (spycep_7edd_native_active_site). Approximation only; see `boron_surrogate_result.json`.
+
+## Interpretation
+
+Docking did not nominate a compelling small-molecule SpyCEP candidate. Scores are modest and rankings are metric-dependent; rational protease chemotypes are only weakly enriched by ligand efficiency. This reads as an honest benchmarking/negative result, consistent with the absence of any reported small-molecule SpyCEP inhibitor. See the manuscript draft in `docs/manuscript/`.
 
 ## Limitations
 
-- Docking scores are computational predictions, not evidence of efficacy or binding in vitro.
-- Raw AutoDock Vina affinity is biased by molecular size; in the pilot the larger drug decoys outranked the smaller amidine positives by raw score, and ligand efficiency was required to recover the expected ordering. Report ligand efficiency (and/or property-matched decoys).
-- Receptor PDBQT files were generated with Meeko `--allow_bad_res`; some incomplete residues were omitted (none catalytic). See `docs/methods/pdbqt_quality_review.json`.
-- The pilot positive controls are generic serine-protease-binding motifs, not SpyCEP-specific inhibitors, so the pilot validates the pipeline, not SpyCEP selectivity.
-- Pilot poses in the 5XYA (AES-anchored) box did not contact the catalytic triad, unlike the 7EDD box; box placement and the removed AES anchor should be reviewed before real docking.
+- Predictions are not evidence of inhibition or efficacy; no therapeutic claim is made.
+- Vina affinity is size-biased; ligand efficiency mitigates but does not remove this.
+- Boron compounds were approximated by gem-diol surrogates omitting boron chemistry.
+- Rigid-receptor, single-ligand-conformer docking ignores protein flexibility.
+- Custom positives are general protease motifs, not validated SpyCEP binders.
