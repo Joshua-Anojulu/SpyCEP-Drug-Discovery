@@ -22,16 +22,32 @@ from spycep_drug_discovery.docking_analysis import rank_docking_results, write_r
 from spycep_drug_discovery.interaction_analysis import analyze_pose_interactions
 from spycep_drug_discovery.ligand_preparation import LigandPreparationError, prepare_ligand
 
+TIGHT = "--tight" in sys.argv[1:]
+
 VINA = PROJECT_ROOT / "tools" / "vina.exe"
 MEEKO = PROJECT_ROOT / ".venv" / "Scripts" / "mk_prepare_ligand.exe"
 LIBRARY = PROJECT_ROOT / "docs" / "methods" / "compound_library_source.json"
 RECEPTORS = PROJECT_ROOT / "docs" / "methods" / "pdbqt_conversion.json"
+TIGHT_POCKETS = PROJECT_ROOT / "docs" / "methods" / "tight_pocket_definition.json"
 POCKETS = PROJECT_ROOT / "docs" / "methods" / "pocket_definition.json"
-RESULT = PROJECT_ROOT / "docs" / "methods" / "docking_result.json"
-RANKING = PROJECT_ROOT / "results" / "tables" / "docking_ranking.csv"
+RESULT = PROJECT_ROOT / "docs" / "methods" / ("docking_result_tight.json" if TIGHT else "docking_result.json")
+RANKING = PROJECT_ROOT / "results" / "tables" / ("docking_ranking_tight.csv" if TIGHT else "docking_ranking.csv")
+POSE_DIR = PROJECT_ROOT / "results" / "docking" / ("library_tight" if TIGHT else "library")
 
 
 def _receptors() -> list[dict]:
+    if TIGHT:
+        pockets = json.loads(TIGHT_POCKETS.read_text(encoding="utf-8"))["pockets"]
+        return [
+            {
+                "pocket_id": p["pocket_id"],
+                "pdb_id": p["pdb_id"],
+                "receptor_pdbqt_path": p["receptor_pdbqt_path"],
+                "box_center_angstrom": p["box_center_angstrom"],
+                "box_size_angstrom": p["box_size_angstrom"],
+            }
+            for p in pockets
+        ]
     manifest = json.loads(RECEPTORS.read_text(encoding="utf-8"))
     return [
         {
@@ -79,7 +95,7 @@ def main() -> None:
                     ligand_id=ligand["ligand_id"],
                     ligand_pdbqt=PROJECT_ROOT / ligand["pdbqt_path"],
                     project_root=PROJECT_ROOT,
-                    output_dir=PROJECT_ROOT / "results" / "docking" / "library",
+                    output_dir=POSE_DIR,
                 )
             except DockingError as exc:
                 dock_failures.append(
@@ -101,8 +117,9 @@ def main() -> None:
     write_ranking_csv(ranked, RANKING)
 
     manifest = {
-        "run_version": "2026-07-02",
+        "run_version": "2026-07-03" if TIGHT else "2026-07-02",
         "status": "full_library_docking_computational_prioritization_only",
+        "box_mode": "tight_triad_centered" if TIGHT else "receptor_prep_box",
         "seed": DEFAULT_SEED,
         "exhaustiveness": DEFAULT_EXHAUSTIVENESS,
         "num_modes": DEFAULT_NUM_MODES,
