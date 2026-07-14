@@ -111,6 +111,10 @@ def _convert_receptor(
         "exit_code": completed.returncode,
         "stdout_line_count": len(completed.stdout.splitlines()),
         "stderr_line_count": len(completed.stderr.splitlines()),
+        # The full stderr, not a tail. The omitted-residue inventory that the QC gate
+        # parses was landing on the very last line of a 20-line window: one extra line of
+        # Meeko output and the gate would have silently recorded zero omitted residues.
+        "stderr": completed.stderr,
         "stderr_tail": _tail(completed.stderr),
         "output_paths": {name: _relative_path(path, project_root) for name, path in output_paths.items()},
         "output_sha256": {name: _sha256(path) for name, path in output_paths.items()},

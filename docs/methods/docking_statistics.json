@@ -1,76 +1,119 @@
 {
-  "note": "More negative affinity/efficiency = stronger. Bootstrap = 95% CI, 10000 resamples, seed 42.",
+  "note": "More negative affinity/efficiency = stronger. Bootstrap = 95% CI, 10000 resamples, seed 42. Ligands are docked as their dominant microspecies at pH 7.4.",
   "custom_vs_fda_wide_box": {
+    "non_fits_excluded": [],
     "best_affinity": {
       "custom_n": 18,
       "fda_n": 55,
+      "custom_mean": -5.889055555555555,
+      "fda_mean": -6.1014,
       "bootstrap_mean_difference_custom_minus_fda": {
-        "observed_difference": 0.2853424242424252,
-        "ci95_low": -0.2512624242424257,
-        "ci95_high": 0.8106531565656556,
+        "observed_difference": 0.21234444444444467,
+        "ci95_low": -0.33351267676767676,
+        "ci95_high": 0.7188513888888864,
         "n_resamples": 10000,
         "excludes_zero": false
       },
       "mann_whitney": {
-        "u_statistic": 584.0,
-        "p_value": 0.2573561050716253
+        "u_statistic": 573.0,
+        "p_value": 0.3212526291928067
       }
     },
     "ligand_efficiency": {
       "custom_n": 18,
       "fda_n": 55,
+      "custom_mean": -0.30094596019536524,
+      "fda_mean": -0.264233822910331,
       "bootstrap_mean_difference_custom_minus_fda": {
-        "observed_difference": -0.03442749328755318,
-        "ci95_low": -0.09211073093440686,
-        "ci95_high": 0.02058894626309049,
+        "observed_difference": -0.03671213728503425,
+        "ci95_low": -0.09348748293676674,
+        "ci95_high": 0.017292228191504413,
         "n_resamples": 10000,
         "excludes_zero": false
       },
       "mann_whitney": {
-        "u_statistic": 444.0,
-        "p_value": 0.5180712237431928
+        "u_statistic": 453.0,
+        "p_value": 0.5953249423319567
       }
     }
   },
   "custom_vs_fda_tight_box": {
+    "non_fits_excluded": [],
     "best_affinity": {
       "custom_n": 18,
       "fda_n": 54,
+      "custom_mean": -5.635555555555555,
+      "fda_mean": -5.931537037037037,
       "bootstrap_mean_difference_custom_minus_fda": {
-        "observed_difference": 0.27787037037037,
-        "ci95_low": -0.1684819444444442,
-        "ci95_high": 0.7201740740740756,
+        "observed_difference": 0.2959814814814816,
+        "ci95_low": -0.15612268518518735,
+        "ci95_high": 0.7411509259259248,
         "n_resamples": 10000,
         "excludes_zero": false
       },
       "mann_whitney": {
-        "u_statistic": 582.0,
-        "p_value": 0.21425994843980434
+        "u_statistic": 572.5,
+        "p_value": 0.2633914273658057
       }
     },
     "ligand_efficiency": {
       "custom_n": 18,
       "fda_n": 54,
+      "custom_mean": -0.28959567943948716,
+      "fda_mean": -0.2617970530270903,
       "bootstrap_mean_difference_custom_minus_fda": {
-        "observed_difference": -0.03134427596852407,
-        "ci95_low": -0.0892976042090141,
-        "ci95_high": 0.023894087326118762,
+        "observed_difference": -0.027798626412396887,
+        "ci95_low": -0.08259501353036301,
+        "ci95_high": 0.023933006632544288,
         "n_resamples": 10000,
         "excludes_zero": false
       },
       "mann_whitney": {
-        "u_statistic": 445.0,
-        "p_value": 0.5984122410601709
+        "u_statistic": 438.0,
+        "p_value": 0.5367617945706332
       }
     }
   },
+  "triad_engagement_wide_box": {
+    "ligands": 73,
+    "contacting_at_least_one_triad_residue": 73,
+    "contacting_at_least_two_triad_residues": 64,
+    "contacting_all_three_triad_residues": 42,
+    "counted_over": "ligands (best receptor), not ligand x receptor pose rows"
+  },
+  "triad_engagement_tight_box": {
+    "ligands": 72,
+    "contacting_at_least_one_triad_residue": 72,
+    "contacting_at_least_two_triad_residues": 66,
+    "contacting_all_three_triad_residues": 47,
+    "counted_over": "ligands (best receptor), not ligand x receptor pose rows"
+  },
   "speb_positive_control": {
-    "positive_affinity": -6.745,
-    "best_decoy_affinity": -5.555,
-    "margin_to_best_decoy": 1.1900000000000004,
-    "decoy_mean": -4.996,
-    "decoy_sd": 0.3951830799346889,
-    "sd_stronger_than_decoy_mean": 4.4257967732045955,
-    "beats_all_decoys": true
+    "decoy_count": 17,
+    "decoys_are_size_matched": true,
+    "positive_heavy_atom_count": 25,
+    "decoy_heavy_atom_range": [
+      22,
+      28
+    ],
+    "by_best_affinity": {
+      "positive_affinity": -6.695,
+      "best_decoy_affinity": -6.918,
+      "margin_to_best_decoy": -0.22299999999999986,
+      "decoy_mean": -6.295705882352941,
+      "decoy_sd": 0.4961705559464763,
+      "sd_stronger_than_decoy_mean": 0.8047517388156599,
+      "beats_all_decoys": false
+    },
+    "by_ligand_efficiency": {
+      "positive_affinity": -0.26780000000000004,
+      "best_decoy_affinity": -0.28295652173913044,
+      "margin_to_best_decoy": -0.015156521739130402,
+      "decoy_mean": -0.25436850078783585,
+      "decoy_sd": 0.026174887280236668,
+      "sd_stronger_than_decoy_mean": 0.5131444910674222,
+      "beats_all_decoys": false
+    },
+    "passes_on_both_metrics": false
   }
 }

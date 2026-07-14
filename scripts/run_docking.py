@@ -17,12 +17,26 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from spycep_drug_discovery.docking import DEFAULT_EXHAUSTIVENESS, DEFAULT_NUM_MODES, DEFAULT_SEED, DockingError, dock_ligand
+from spycep_drug_discovery.docking import (
+    DEFAULT_EXHAUSTIVENESS,
+    DEFAULT_NUM_MODES,
+    DEFAULT_SEED,
+    DEFAULT_TIMEOUT_SECONDS,
+    DockingError,
+    dock_ligand,
+)
 from spycep_drug_discovery.docking_analysis import rank_docking_results, write_ranking_csv
 from spycep_drug_discovery.interaction_analysis import analyze_pose_interactions
-from spycep_drug_discovery.ligand_preparation import LigandPreparationError, prepare_ligand
+from spycep_drug_discovery.ligand_preparation import (
+    PHYSIOLOGICAL_PH,
+    LigandPreparationError,
+    prepare_ligand,
+)
 
 TIGHT = "--tight" in sys.argv[1:]
+# Reuse poses already on disk. Only safe when the ligand chemistry and the box are
+# unchanged since they were written, so it is opt-in rather than the default.
+RESUME = "--resume" in sys.argv[1:]
 
 VINA = PROJECT_ROOT / "tools" / "vina.exe"
 MEEKO = PROJECT_ROOT / ".venv" / "Scripts" / "mk_prepare_ligand.exe"
@@ -79,9 +93,12 @@ def main() -> None:
             )
             ligand["set"] = compound["set"]
             prepared.append(ligand)
-            print(f"  prep ok   {compound['ligand_id']}")
-        except (LigandPreparationError, Exception) as exc:  # noqa: BLE001 - record and continue
-            prep_failures.append({"ligand_id": compound["ligand_id"], "error": str(exc)[:200]})
+            print(f"  prep ok   {compound['ligand_id']}  charge={ligand['formal_charge']:+d}")
+        except LigandPreparationError as exc:
+            # Only genuine preparation failures are recorded and skipped. Catching bare
+            # Exception here previously turned any code bug into a silent "compound
+            # failed to prepare", shrinking the library without anyone noticing.
+            prep_failures.append({"ligand_id": compound["ligand_id"], "error": str(exc)[:300]})
             print(f"  prep FAIL {compound['ligand_id']}: {str(exc)[:120]}")
 
     results: list[dict] = []
@@ -96,6 +113,7 @@ def main() -> None:
                     ligand_pdbqt=PROJECT_ROOT / ligand["pdbqt_path"],
                     project_root=PROJECT_ROOT,
                     output_dir=POSE_DIR,
+                    resume=RESUME,
                 )
             except DockingError as exc:
                 dock_failures.append(
@@ -104,7 +122,12 @@ def main() -> None:
                 print(f"  dock FAIL {ligand['ligand_id']} vs {receptor['pocket_id']}: {str(exc)[:100]}")
                 continue
             row["set"] = ligand["set"]
+            row["role"] = ligand["set"]
             row["heavy_atom_count"] = ligand["heavy_atom_count"]
+            row["docked_smiles"] = ligand["docked_smiles"]
+            row["formal_charge"] = ligand["formal_charge"]
+            row["undefined_stereocenter_count"] = ligand["undefined_stereocenter_count"]
+            row["embedded_isomeric_smiles"] = ligand["embedded_isomeric_smiles"]
             row["interactions"] = analyze_pose_interactions(
                 PROJECT_ROOT / receptor["receptor_pdbqt_path"],
                 PROJECT_ROOT / row["out_path"],
@@ -117,18 +140,61 @@ def main() -> None:
     write_ranking_csv(ranked, RANKING)
 
     manifest = {
-        "run_version": "2026-07-03" if TIGHT else "2026-07-02",
+        "run_version": "2026-07-12",
         "status": "full_library_docking_computational_prioritization_only",
-        "box_mode": "tight_triad_centered" if TIGHT else "receptor_prep_box",
+        "box_mode": "tight_triad_side_chain_centered" if TIGHT else "receptor_prep_box",
         "seed": DEFAULT_SEED,
         "exhaustiveness": DEFAULT_EXHAUSTIVENESS,
         "num_modes": DEFAULT_NUM_MODES,
         "vina_version": "AutoDock Vina v1.2.7",
+        "protonation_ph": PHYSIOLOGICAL_PH,
+        "protonation_tool": "explicit pKa rule set (spycep_drug_discovery.protonation)",
+        "per_docking_timeout_seconds": DEFAULT_TIMEOUT_SECONDS,
+        "resumed_existing_poses": RESUME,
         "receptor_ensemble": [r["pocket_id"] for r in receptors],
+        "boxes": [
+            {
+                "pocket_id": r["pocket_id"],
+                "box_center_angstrom": r["box_center_angstrom"],
+                "box_size_angstrom": r["box_size_angstrom"],
+            }
+            for r in receptors
+        ],
         "compounds_input": len(compounds),
         "compounds_docked": len({row["ligand_id"] for row in results}),
         "prep_failures": prep_failures,
         "dock_failures": dock_failures,
+        "ligand_preparation": [
+            {
+                "ligand_id": ligand["ligand_id"],
+                "set": ligand["set"],
+                "input_smiles": ligand["input_smiles"],
+                "docked_smiles": ligand["docked_smiles"],
+                "embedded_isomeric_smiles": ligand["embedded_isomeric_smiles"],
+                "formal_charge": ligand["formal_charge"],
+                "heavy_atom_count": ligand["heavy_atom_count"],
+                "undefined_stereocenter_count": ligand["undefined_stereocenter_count"],
+                "pdbqt_sha256": ligand["pdbqt_sha256"],
+            }
+            for ligand in prepared
+        ],
+        # Per-docking provenance: the command, box, seed and output hash for every single
+        # Vina invocation. These were computed and then thrown away, while the README
+        # claimed the manifests recorded commands and output hashes.
+        "dockings": [
+            {
+                "ligand_id": row["ligand_id"],
+                "pocket_id": row["pocket_id"],
+                "command": row["command"],
+                "seed": row["seed"],
+                "exhaustiveness": row["exhaustiveness"],
+                "num_modes": row["num_modes"],
+                "best_affinity_kcal_mol": row["best_affinity_kcal_mol"],
+                "out_path": row["out_path"],
+                "out_sha256": row["out_sha256"],
+            }
+            for row in results
+        ],
         "ranking": ranked,
         "pose_interactions": [
             {

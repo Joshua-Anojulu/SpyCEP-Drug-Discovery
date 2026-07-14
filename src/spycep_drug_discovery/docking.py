@@ -13,6 +13,12 @@ DOCKING_OUTPUT_DIR = "results/docking"
 DEFAULT_SEED = 42
 DEFAULT_EXHAUSTIVENESS = 8
 DEFAULT_NUM_MODES = 9
+# A ligand that fits its search box poses in minutes. Anything still searching after
+# half an hour is not going to fit: vancomycin (101 heavy atoms) ran for five hours
+# against the 16 A triad box without returning a pose. Compounds that exhaust this
+# budget are recorded as non-fits for that box, the same treatment given to the
+# non-negative clash scores Vina returns for oversized ligands.
+DEFAULT_TIMEOUT_SECONDS = 600.0
 
 _MODE_ROW = re.compile(
     r"^\s*(\d+)\s+(-?\d+\.\d+)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s*$"
@@ -117,10 +123,32 @@ def dock_ligand(
     seed: int = DEFAULT_SEED,
     exhaustiveness: int = DEFAULT_EXHAUSTIVENESS,
     num_modes: int = DEFAULT_NUM_MODES,
-    resume: bool = True,
+    resume: bool = False,
+    timeout_seconds: float | None = DEFAULT_TIMEOUT_SECONDS,
 ) -> dict[str, Any]:
+    """Dock one ligand into one receptor box.
+
+    `resume` defaults to False. A pose file on disk carries no record of the ligand
+    chemistry or box that produced it, so resuming silently reuses poses after a change
+    to protonation, stereochemistry or box definition. Opt in only when re-running an
+    identical configuration.
+
+    `timeout_seconds` bounds a single Vina call. A ligand far too large for the search
+    box does not fail; it thrashes. Vancomycin (101 heavy atoms) ran for five hours
+    against the 16 A triad box without producing a pose. A timeout turns that into a
+    recorded non-fit instead of a hung pipeline.
+    """
     output_dir.mkdir(parents=True, exist_ok=True)
     out_path = output_dir / f"{ligand_id}__{receptor['pocket_id']}.pdbqt"
+    # A ligand that exhausted the budget once will exhaust it again. Record the verdict
+    # so a resumed run skips it instead of re-spending the timeout on every restart.
+    timeout_marker = output_dir / f"{ligand_id}__{receptor['pocket_id']}.no_fit"
+
+    if resume and timeout_marker.is_file():
+        raise DockingError(
+            f"{ligand_id} vs {receptor['pocket_id']}: no pose within the compute budget on a "
+            f"previous run (see {timeout_marker.name}). The ligand is too large for this search box."
+        )
 
     if resume and out_path.is_file():
         existing_modes = parse_pose_pdbqt_modes(out_path.read_text(encoding="utf-8"))
@@ -152,7 +180,26 @@ def dock_ligand(
         exhaustiveness=exhaustiveness,
         num_modes=num_modes,
     )
-    completed = subprocess.run(command, cwd=project_root, capture_output=True, text=True, check=False)
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=project_root,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=timeout_seconds,
+        )
+    except subprocess.TimeoutExpired as exc:
+        out_path.unlink(missing_ok=True)  # a partial pose file is not a result
+        timeout_marker.write_text(
+            f"No pose within {timeout_seconds:.0f}s against box "
+            f"{receptor['box_size_angstrom']}. Ligand too large for this search box.\n",
+            encoding="utf-8",
+        )
+        raise DockingError(
+            f"{ligand_id} vs {receptor['pocket_id']} produced no pose within "
+            f"{timeout_seconds:.0f}s. The ligand is too large for this search box."
+        ) from exc
     if completed.returncode != 0:
         raise DockingError(
             f"{ligand_id} vs {receptor['pocket_id']} docking failed "

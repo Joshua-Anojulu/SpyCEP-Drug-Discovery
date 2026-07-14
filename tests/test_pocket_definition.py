@@ -127,3 +127,39 @@ def _atom(
         f"{record:<6}{serial:5d} {atom_name:>4} {residue_name:>3} {chain_id}{residue_number:4d}"
         f"    {x:8.3f}{y:8.3f}{z:8.3f}  1.00 10.00          {element:>2}"
     )
+
+
+def test_side_chain_selector_excludes_backbone_atoms(tmp_path):
+    # A box described as a "side-chain centroid" must not average backbone atoms in.
+    # define_tight_pockets previously read the PDBQT, which carries no atom names, and
+    # so silently included backbone N/CA/C/O and polar hydrogens.
+    from spycep_drug_discovery.pocket_definition import active_site_side_chain_coordinates
+
+    pdb = tmp_path / "x.pdb"
+    pdb.write_text(_triad_pdb_text(), encoding="utf-8")
+
+    atoms = active_site_side_chain_coordinates(pdb)
+
+    names = {atom.atom_name for atom in atoms}
+    assert names == {"CG", "OD1", "OD2", "ND1", "CD2", "CE1", "NE2", "CB", "OG"}
+    assert not names & {"N", "CA", "C", "O"}
+
+
+def _triad_pdb_text() -> str:
+    rows = [
+        ("ASP", 151, [("N", 0.0), ("CA", 1.0), ("C", 2.0), ("O", 3.0), ("CG", 4.0), ("OD1", 5.0), ("OD2", 6.0)]),
+        ("HIS", 279, [("N", 0.0), ("CA", 1.0), ("C", 2.0), ("O", 3.0), ("CG", 4.0), ("ND1", 5.0),
+                      ("CD2", 6.0), ("CE1", 7.0), ("NE2", 8.0)]),
+        ("SER", 617, [("N", 0.0), ("CA", 1.0), ("C", 2.0), ("O", 3.0), ("CB", 4.0), ("OG", 5.0)]),
+    ]
+    lines = []
+    serial = 1
+    for residue_name, number, atoms in rows:
+        for atom_name, value in atoms:
+            lines.append(
+                f"ATOM  {serial:>5} {atom_name:<4}{residue_name:>4} A{number:>4}    "
+                f"{value:>8.3f}{value:>8.3f}{value:>8.3f}  1.00  0.00"
+            )
+            serial += 1
+    lines.append("END")
+    return "\n".join(lines) + "\n"

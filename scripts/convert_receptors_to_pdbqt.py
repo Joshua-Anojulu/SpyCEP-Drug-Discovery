@@ -91,7 +91,10 @@ def default_converter_command(project_root: Path) -> tuple[str, ...]:
     )
     for candidate in candidates:
         if candidate.is_file():
-            return (candidate.relative_to(project_root).as_posix(),)
+            # Absolute, not project-relative: Windows resolves a subprocess executable
+            # against the parent's working directory and PATH, never against the child's
+            # `cwd`, so a relative path here raises WinError 2 even though the file exists.
+            return (str(candidate.resolve()),)
     return ("mk_prepare_receptor",)
 
 

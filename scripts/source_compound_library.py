@@ -30,17 +30,45 @@ PUG = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{name}/property/{
 SMILES_PROPS = "IsomericSMILES,CanonicalSMILES,SMILES,ConnectivitySMILES"
 
 
+class PubChemUnavailable(RuntimeError):
+    """PubChem could not be reached or returned an unusable response.
+
+    Distinct from "PubChem has no such compound". Collapsing the two let a transient
+    HTTP 503 -- routine under PubChem's rate limiting, and this script fires 77 requests
+    -- silently shrink the library, changing the screen's denominator with nothing but a
+    line of stdout to show for it.
+    """
+
+
 def _fetch(name: str) -> dict | None:
     url = PUG.format(name=quote(name), props=SMILES_PROPS)
     try:
         response = requests.get(url, timeout=30)
-    except requests.RequestException as exc:  # network error
-        print(f"  DROP {name!r}: request error {exc}")
+    except requests.RequestException as exc:
+        raise PubChemUnavailable(f"{name!r}: request error {exc}") from exc
+    if response.status_code == 404:
+        print(f"  DROP {name!r}: PubChem has no compound by that name")
         return None
     if response.status_code != 200:
-        print(f"  DROP {name!r}: PubChem HTTP {response.status_code}")
+        raise PubChemUnavailable(f"{name!r}: PubChem HTTP {response.status_code}")
+
+    try:
+        entries = response.json()["PropertyTable"]["Properties"]
+    except (ValueError, KeyError) as exc:
+        raise PubChemUnavailable(f"{name!r}: unexpected PubChem response shape ({exc})") from exc
+    if not entries:
+        print(f"  DROP {name!r}: PubChem returned no properties")
         return None
-    props = response.json()["PropertyTable"]["Properties"][0]
+    # A name can map to several CIDs (free base vs salt is the live risk for the
+    # amidine drugs here). Taking Properties[0] blindly would silently dock whichever
+    # form PubChem happened to list first.
+    if len(entries) > 1:
+        cids = [entry.get("CID") for entry in entries]
+        raise PubChemUnavailable(
+            f"{name!r}: ambiguous -- PubChem returned {len(entries)} CIDs {cids}. "
+            "Pin the intended CID in the seed rather than guessing."
+        )
+    props = entries[0]
     smiles = (
         props.get("IsomericSMILES")
         or props.get("CanonicalSMILES")

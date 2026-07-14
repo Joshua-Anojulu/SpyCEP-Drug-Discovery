@@ -80,11 +80,18 @@ def _build_pocket(
     include_aes: bool,
 ) -> dict:
     path = structure_dir / f"{pdb_id}.pdb"
-    coordinates = list(_active_site_side_chain_coordinates(path))
+    coordinates = list(active_site_side_chain_coordinates(path))
     if include_aes:
-        coordinates.extend(
-            coordinates_for_residue(path, chain_id="A", residue_number=1701, residue_name="AES", include_heterogens=True)
+        aes = coordinates_for_residue(
+            path, chain_id="A", residue_number=1701, residue_name="AES", include_heterogens=True
         )
+        # Without this the AES branch fails open: an absent anchor silently collapses the
+        # primary box to a triad-only box while still reporting an AES-anchored source.
+        if not aes:
+            raise ValueError(
+                f"{path.name} is missing the AES A1701 ligand anchor required by pocket {pocket_id!r}."
+            )
+        coordinates.extend(aes)
     box = box_from_coordinates(
         coordinates,
         padding_angstrom=POCKET_PADDING_ANGSTROM,
@@ -104,7 +111,13 @@ def _build_pocket(
     }
 
 
-def _active_site_side_chain_coordinates(path: Path) -> tuple[AtomCoordinate, ...]:
+def active_site_side_chain_coordinates(path: Path) -> tuple[AtomCoordinate, ...]:
+    """Catalytic side-chain atoms of D151/H279/S617 — no backbone, no hydrogens.
+
+    Anything defining a box "on the triad" must go through this. Averaging whole
+    residues instead pulls the centre toward the backbone and away from the
+    catalytic machinery.
+    """
     coordinates: list[AtomCoordinate] = []
     for residue in ACTIVE_SITE_RESIDUES:
         residue_atoms = coordinates_for_residue(

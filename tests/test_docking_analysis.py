@@ -39,3 +39,37 @@ def test_write_ranking_csv_roundtrips(tmp_path):
     assert rows[0]["ligand_id"] == "lig_a"
     assert rows[0]["rank"] == "1"
     assert rows[0]["heavy_atom_count"] == "9"
+
+
+def test_ranking_carries_the_set_label_the_comparison_depends_on():
+    # `set` (custom vs FDA) is the label the entire study turns on. It was dropped here,
+    # so the emitted `role` column was always blank and every consumer had to re-join
+    # against the compound library to recover it.
+    ranked = rank_docking_results(
+        [
+            {"ligand_id": "benzamidine", "pocket_id": "p1", "best_affinity_kcal_mol": -5.0,
+             "set": "custom_anti_virulence", "heavy_atom_count": 9},
+            {"ligand_id": "aspirin", "pocket_id": "p1", "best_affinity_kcal_mol": -6.0,
+             "set": "fda_comparator", "heavy_atom_count": 13},
+        ]
+    )
+
+    by_id = {row["ligand_id"]: row for row in ranked}
+    assert by_id["benzamidine"]["set"] == "custom_anti_virulence"
+    assert by_id["aspirin"]["set"] == "fda_comparator"
+
+
+def test_ranking_csv_emits_the_set_column(tmp_path):
+    ranked = rank_docking_results(
+        [
+            {"ligand_id": "benzamidine", "pocket_id": "p1", "best_affinity_kcal_mol": -5.0,
+             "set": "custom_anti_virulence", "heavy_atom_count": 9},
+        ]
+    )
+    out = tmp_path / "ranking.csv"
+
+    write_ranking_csv(ranked, out)
+
+    header, row = out.read_text(encoding="utf-8").splitlines()[:2]
+    assert "set" in header.split(",")
+    assert "custom_anti_virulence" in row

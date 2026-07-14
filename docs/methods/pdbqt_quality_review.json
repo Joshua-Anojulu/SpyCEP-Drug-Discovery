@@ -1,10 +1,10 @@
 {
-  "review_version": "2026-07-02",
+  "review_version": "2026-07-12",
   "source_pdbqt_conversion": "docs/methods/pdbqt_conversion.json",
   "source_pocket_definition": "docs/methods/pocket_definition.json",
   "decision_status": "reviewed_caution_not_docking_approval",
   "rules": [
-    "Parse Meeko --allow_bad_res residue omissions from the conversion manifest stderr tail.",
+    "Parse Meeko --allow_bad_res residue omissions from the full conversion stderr.",
     "Block docking if any omitted residue overlaps the tracked SpyCEP catalytic active-site residues.",
     "Block docking if any tracked catalytic active-site residue is absent from the generated receptor PDBQT.",
     "Treat passing QC as a review checkpoint, not final docking approval."

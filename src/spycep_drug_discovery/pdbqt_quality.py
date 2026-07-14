@@ -7,23 +7,47 @@ from pathlib import Path
 from typing import Any, Mapping
 
 
-REVIEW_VERSION = "2026-07-02"
+REVIEW_VERSION = "2026-07-12"
 REVIEW_RULES = (
-    "Parse Meeko --allow_bad_res residue omissions from the conversion manifest stderr tail.",
+    "Parse Meeko --allow_bad_res residue omissions from the full conversion stderr.",
     "Block docking if any omitted residue overlaps the tracked SpyCEP catalytic active-site residues.",
     "Block docking if any tracked catalytic active-site residue is absent from the generated receptor PDBQT.",
     "Treat passing QC as a review checkpoint, not final docking approval.",
 )
 
+IGNORED_RESIDUE_PATTERN = re.compile(
+    r"Template matching failed for:\s*(\[.*?\])\s*Ignored due to allow_bad_res", re.S
+)
 
-def parse_ignored_residue_keys(stderr_tail: str) -> tuple[str, ...]:
-    match = re.search(r"Template matching failed for:\s*(\[.*?\])\s*Ignored due to allow_bad_res", stderr_tail, re.S)
+
+class QualityReviewError(RuntimeError):
+    """Raised when the omitted-residue inventory cannot be established."""
+
+
+def parse_ignored_residue_keys(stderr: str, *, allow_bad_res: bool = True) -> tuple[str, ...]:
+    """Residues Meeko dropped under --allow_bad_res.
+
+    Fails closed. Returning () on a parse miss made "the converter omitted nothing" and
+    "we could not read what the converter omitted" indistinguishable, which turned the
+    active-site overlap gate into a silent no-op. Only an explicit absence of the warning
+    counts as "nothing omitted".
+    """
+    if not allow_bad_res:
+        return ()
+    match = IGNORED_RESIDUE_PATTERN.search(stderr)
     if not match:
+        if "Template matching failed" in stderr:
+            raise QualityReviewError(
+                "Meeko reported template-matching failures but the omitted-residue list "
+                "could not be parsed. Refusing to record zero omissions."
+            )
         return ()
     try:
         values = ast.literal_eval(match.group(1))
-    except (SyntaxError, ValueError):
-        return ()
+    except (SyntaxError, ValueError) as exc:
+        raise QualityReviewError(
+            f"Could not parse Meeko's omitted-residue list: {exc}"
+        ) from exc
     return tuple(str(value) for value in values)
 
 
@@ -61,7 +85,10 @@ def _review_receptor(
     active_site_residues: tuple[str, ...],
     project_root: Path,
 ) -> dict[str, Any]:
-    ignored_residue_keys = parse_ignored_residue_keys(str(receptor.get("stderr_tail", "")))
+    # Prefer the full stderr; fall back to the legacy truncated tail only if that is all
+    # a pre-existing manifest carries.
+    stderr = str(receptor.get("stderr") or receptor.get("stderr_tail") or "")
+    ignored_residue_keys = parse_ignored_residue_keys(stderr)
     ignored_chain_numbers = {_chain_number_key(residue_key) for residue_key in ignored_residue_keys}
     active_chain_numbers = {_chain_number_key(residue_key) for residue_key in active_site_residues}
     ignored_active_site = sorted(ignored_chain_numbers & active_chain_numbers, key=_residue_sort_key)

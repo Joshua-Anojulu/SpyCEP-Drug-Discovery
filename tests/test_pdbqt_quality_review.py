@@ -134,3 +134,22 @@ def _pdbqt_line(residue_key: str, serial: int) -> str:
         f"ATOM  {serial:5d}  CA  {residue_name:>3} {chain_id}{int(residue_number):4d}"
         "     0.000   0.000   0.000  1.00  0.00     0.100 C"
     )
+
+
+def test_parse_ignored_residue_keys_fails_closed_on_unparseable_warning():
+    # The omitted-residue list previously landed on the very last line of a 20-line
+    # stderr window. If it fell out, the parser returned () and the manifest recorded
+    # "no residues omitted" -- indistinguishable from a genuinely clean conversion, and
+    # the active-site overlap gate became a silent no-op.
+    import pytest
+
+    from spycep_drug_discovery.pdbqt_quality import QualityReviewError
+
+    truncated = "- Template matching failed for: ['A:118', 'A:60"
+
+    with pytest.raises(QualityReviewError):
+        parse_ignored_residue_keys(truncated)
+
+
+def test_parse_ignored_residue_keys_reports_none_when_meeko_omitted_nothing():
+    assert parse_ignored_residue_keys("mk_prepare_receptor wrote 1 file.\n") == ()

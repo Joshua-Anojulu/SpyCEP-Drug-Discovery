@@ -26,7 +26,16 @@ def rank_docking_results(results: Sequence[Mapping[str, Any]]) -> list[dict[str,
         per_receptor[ligand_id][pocket_id] = affinity
         per_ligand.setdefault(
             ligand_id,
-            {"ligand_id": ligand_id, "role": row.get("role"), "heavy_atom_count": row.get("heavy_atom_count")},
+            {
+                "ligand_id": ligand_id,
+                # `set` is the custom-vs-FDA label the whole comparison turns on. It was
+                # previously dropped here, so every downstream consumer had to re-join
+                # against the library manifest and the emitted `role` column was always
+                # empty.
+                "set": row.get("set"),
+                "role": row.get("role"),
+                "heavy_atom_count": row.get("heavy_atom_count"),
+            },
         )
 
     ranked: list[dict[str, Any]] = []
@@ -67,6 +76,7 @@ def write_ranking_csv(ranked: Sequence[Mapping[str, Any]], out_path: Path) -> No
             [
                 "rank",
                 "ligand_id",
+                "set",
                 "role",
                 "heavy_atom_count",
                 "ensemble_best_affinity_kcal_mol",
@@ -80,7 +90,8 @@ def write_ranking_csv(ranked: Sequence[Mapping[str, Any]], out_path: Path) -> No
                 [
                     item["rank"],
                     item["ligand_id"],
-                    item.get("role", ""),
+                    item.get("set") or "",
+                    item.get("role") or "",
                     item.get("heavy_atom_count", ""),
                     f"{item['ensemble_best_affinity_kcal_mol']:.3f}",
                     f"{le:.4f}" if le is not None else "",
