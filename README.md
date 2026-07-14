@@ -12,11 +12,26 @@ An earlier version of this study reported that the control passed by 4.4 SD. Tha
 
 ## What's here
 
-- **Reproducible pipeline** (fixed seeds; tracked JSON manifests recording per-docking commands, boxes and output hashes; PubChem and RCSB sources, nothing hand-entered): target feasibility → pocket definition → receptor prep → PDBQT conversion and QC → compound curation and ADMET → ligand prep (desalt → protonate at pH 7.4 → embed) → AutoDock Vina docking → ligand-efficiency ranking → catalytic-triad interaction analysis → bootstrap statistics → figures.
+> **STATUS — remediation in progress; the results below are STALE and are being regenerated.**
+> An adversarial code review ([`docs/CODEX-CODE-REVIEW-2026-07-13.md`](docs/CODEX-CODE-REVIEW-2026-07-13.md)) found defects in the
+> supporting layer of this study — an inflated triad statistic, mis-speciated ligands, and a broken provenance chain. The remediation
+> plan ([`PLAN.md`](PLAN.md)) was hardened over nine rounds of cross-model review. The pipeline has been rebuilt; **the docking campaign
+> has not yet been re-run**, so every number in the sections below still comes from the defective run and must not be cited.
+> The headline null result and the failed positive control are *expected* to survive, but that is a prediction, not a finding —
+> the method is frozen and whatever it returns will be reported.
+
+- **Reproducible pipeline** (fixed seed; `--cpu 1`, because multi-CPU Vina is non-deterministic even under a fixed seed; content-addressed QC and MMFF gates; per-attempt provenance sidecars recording the exact Vina command, timing and output hash; RDKit and Meeko pinned exactly): target feasibility → pocket definition → receptor prep → PDBQT conversion and QC → compound curation and ADMET → species audit → ligand prep (desalt → assign species at pH 7.4 → embed) → AutoDock Vina docking → ligand-efficiency ranking → catalytic-triad interaction analysis → state-robust statistics → figures.
+- **Structures and compounds are sourced, not hand-entered** (PubChem, RCSB). The one deliberate exception is the pair of alternative protonation states for each `AMBIGUOUS` compound: those are hand-written, literature-cited, and reviewed — but they are a **hypothesis, not a result**. We do not assert which state is correct; we dock both and report whether the conclusion depends on the choice.
 - **109 passing tests**; deterministic manifest regeneration.
 - **Primary target** SpyCEP/ScpC (S8 subtilisin-like, catalytic triad D151/H279/S617); **positive-control target** SpeB (Cys192/His340).
 
-Ligands are docked as their dominant microspecies at **pH 7.4**, assigned from an explicit pKa rule set validated against literature charges for 24 reference compounds, and not as the neutral PubChem depiction. The custom set is dominated by amidines and guanidines, which are cations at physiological pH, and the S1 salt bridge is their entire binding rationale.
+Ligands are docked at **pH 7.4** as species assigned by an explicit, auditable pKa rule set — not as the neutral PubChem depiction. The custom set is dominated by amidines and guanidines, which are cations at physiological pH, and the S1 salt bridge is their entire binding rationale.
+
+**Where the evidence cannot pick a state, we do not pick one.** Each compound is classified `UNAMBIGUOUS`, `AMBIGUOUS`, or `NO_IONISABLE_SITE` in [`docs/methods/species_audit.json`](docs/methods/species_audit.json). Four compounds — **ampicillin, amoxicillin, cephalexin and lisinopril** — carry an ionisable site whose pKa sits too close to 7.4 for the dominant species to be established, so **both plausible states are docked** and results are reported as state-robust (`ROBUST_*`) or `STATE_DEPENDENT`. No abundance fraction is claimed for any of them: macroscopic pKa values cannot identify *which site* carries the proton, and inventing a fraction would manufacture precision the evidence does not support.
+
+The rule set is checked against **24 reference compounds** in [`docs/methods/protonation_reference_cases.json`](docs/methods/protonation_reference_cases.json), each recording the pKa value, the ionisable site, the measurement conditions, a source URL, and a verbatim quote from that source. Evidence is **tiered honestly**: 16 compound-specific experimental, 3 curated experimental compilations, 3 secondary-review (chain of custody stops at a review or textbook), and **2 `NO_SOURCE_FOUND`**. A PubChem link proves *structure*, not solution ionisation, and is never counted as a pKa source.
+
+Those two `NO_SOURCE_FOUND` compounds are worth naming, because they illustrate the failure mode this project exists to avoid. **Fosfomycin** and **pentamidine** have no experimental pKa we could verify in any fetchable source; the values that circulate for both are software *predictions* (Chemicalize, DrugBank) that have been laundered into the literature as though measured — pentamidine's "pKa 12.1" appears in a peer-reviewed paper stated as fact with no citation. We record them as unverifiable rather than repeat the prediction.
 
 The SpeB control is reported on **both** raw affinity and ligand efficiency, against **size-matched** decoys, with the box built from the catalytic dyad and never from the co-crystallised ligand. It fails on both metrics.
 

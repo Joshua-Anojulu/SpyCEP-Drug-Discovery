@@ -104,7 +104,7 @@ def _project_with_prepared_receptor(tmp_path):
     docs_dir = project_root / "docs" / "methods"
     receptor_dir.mkdir(parents=True)
     docs_dir.mkdir(parents=True)
-    (receptor_dir / "spycep_fake.pdb").write_text("ATOM      1  CA  SER A 617\nEND\n", encoding="utf-8")
+    (receptor_dir / "spycep_fake.pdb").write_bytes(b"ATOM      1  CA  SER A 617\nEND\n")
     (docs_dir / "receptor_preparation.json").write_text(json.dumps(_receptor_manifest()), encoding="utf-8")
     return project_root
 
@@ -145,9 +145,37 @@ def _receptor_manifest():
                 "pdb_id": "FAKE",
                 "chain_id": "A",
                 "prepared_pdb_path": "data/processed/receptors/spycep_fake.pdb",
-                "sha256": "a" * 64,
+                "sha256": hashlib.sha256(b"ATOM      1  CA  SER A 617\nEND\n").hexdigest(),
                 "box_center_angstrom": {"x": -43.74, "y": 28.233, "z": 26.561},
                 "box_size_angstrom": {"x": 22.0, "y": 22.0, "z": 27.5},
             }
         ],
     }
+
+
+
+def test_conversion_deletes_every_stale_expected_output_before_invocation(tmp_path):
+    project_root = _project_with_prepared_receptor(tmp_path)
+    output_dir = project_root / "data" / "processed" / "pdbqt"
+    output_dir.mkdir(parents=True)
+    expected = [
+        output_dir / "spycep_fake.pdbqt",
+        output_dir / "spycep_fake.json",
+        output_dir / "spycep_fake.box.txt",
+        output_dir / "spycep_fake.box.pdb",
+    ]
+    for path in expected:
+        path.write_text("stale", encoding="utf-8")
+    failing_converter = tmp_path / "failing_converter.py"
+    failing_converter.write_text("import sys; sys.exit(2)\n", encoding="utf-8")
+
+    with pytest.raises(PdbqtConversionError):
+        convert_receptors_to_pdbqt(
+            _receptor_manifest(),
+            project_root=project_root,
+            output_dir=output_dir,
+            converter_command=(sys.executable, str(failing_converter)),
+            tool_info={"name": "fake"},
+        )
+
+    assert not any(path.exists() for path in expected)

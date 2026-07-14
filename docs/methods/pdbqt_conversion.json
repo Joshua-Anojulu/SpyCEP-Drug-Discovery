@@ -4,7 +4,7 @@
   "source_preparation_version": "2026-07-02",
   "tool": {
     "name": "Meeko mk_prepare_receptor",
-    "command_path": "C:/Users/josha/OneDrive/Documents/SpyCEP-Drug-Discovery/.venv/Scripts/mk_prepare_receptor.exe",
+    "command_path": ".venv/Scripts/mk_prepare_receptor.exe",
     "meeko_version": "0.7.1",
     "rdkit_version": "2025.09.6",
     "gemmi_version": "0.7.5",
@@ -36,7 +36,7 @@
         "z": 27.5
       },
       "command": [
-        "C:/Users/josha/OneDrive/Documents/SpyCEP-Drug-Discovery/.venv/Scripts/mk_prepare_receptor.exe",
+        ".venv/Scripts/mk_prepare_receptor.exe",
         "--read_pdb",
         "data/processed/receptors/spycep_5xya_aes_active_site.pdb",
         "-o",
@@ -90,7 +90,7 @@
         "z": 22.0
       },
       "command": [
-        "C:/Users/josha/OneDrive/Documents/SpyCEP-Drug-Discovery/.venv/Scripts/mk_prepare_receptor.exe",
+        ".venv/Scripts/mk_prepare_receptor.exe",
         "--read_pdb",
         "data/processed/receptors/spycep_7edd_native_active_site.pdb",
         "-o",

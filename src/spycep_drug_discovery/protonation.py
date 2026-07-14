@@ -23,8 +23,15 @@ far enough from 7.4 that the dominant species is unambiguous:
 
 Everything else stays neutral. That includes phenols (9.5-10), imidazole (~7, so only a
 quarter protonated and left neutral), thiols (~8.3), anilines (weak bases, ~4.6),
-amides, and sulfonamides. Each of those choices is a rounding decision, and
-`PROTONATION_RULES` records them so a reader can check the call rather than trust it.
+amides, sulfonamides, and each explicitly guarded amine site whose measured pKa is too
+close to (or below) 7.4 for the generic 9-11 amine rule to apply. The guard is
+per-site: it does not collapse a molecule to one protonated amine, which would turn
+azithromycin's two independently basic amines into a spurious monocation.
+
+Each choice is recorded in `PROTONATION_RULES` so a reader can check the call rather
+than trust it. The rules deliberately emit the neutral form at an undecided site;
+hand-reviewed alternative states belong in the authoritative species catalog, never
+in this generic rule.
 """
 from __future__ import annotations
 
@@ -40,6 +47,7 @@ PROTONATION_RULES = {
         {"group": "sulfonic acid", "pka": "<1"},
         {"group": "phosphonic/phosphate O-H", "pka": "~2"},
         {"group": "tetrazole", "pka": "~4.9"},
+        {"group": "tetracycline acidic tricarbonyl/enol", "pka": "~3.0"},
         {"group": "vinylogous acid (4-hydroxycoumarin)", "pka": "~5.1"},
     ],
     "protonated": [
@@ -53,6 +61,21 @@ PROTONATION_RULES = {
         {"group": "thiol", "pka": "~8.3"},
         {"group": "aniline", "pka": "~4.6", "note": "weak base; free base dominates"},
         {"group": "amide, sulfonamide, alcohol", "pka": "not ionised near 7.4"},
+        {
+            "group": "beta-lactam alpha-amino site",
+            "pka": "~6.8-7.3",
+            "note": "site is undecided near pH 7.4; generic rule emits neutral",
+        },
+        {
+            "group": "sildenafil distal piperazine nitrogen",
+            "pka": "~6.5",
+            "note": "neutral base is dominant at pH 7.4",
+        },
+        {
+            "group": "lisinopril lower-basicity secondary amine",
+            "pka": "below physiological pH",
+            "note": "site remains neutral while the terminal primary amine is protonated",
+        },
     ],
 }
 
@@ -61,7 +84,9 @@ _ACID_SMARTS = (
     "[CX3](=O)[OX2H1]",            # carboxylic acid
     "[SX4](=O)(=O)[OX2H1]",        # sulfonic acid
     "[PX4](=O)[OX2H1]",            # phosphonic / phosphate
-    "c1nnn[nH]1",                  # tetrazole
+    # Doxycycline's A-ring tricarbonyl/enol. This identifies the hydroxy atom in
+    # O=C-C(C(=O)N)=C(O), rather than deprotonating one of its phenols/alcohols.
+    "[CX3](=[OX1])[CX3]([CX3](=[OX1])[NX3])=[CX3]([OX2H1])",
     # 4-hydroxycoumarin (warfarin). RDKit aromatises this ring, so an aliphatic
     # enol pattern never sees it.
     "[OX2H1]c1c2ccccc2oc(=O)c1",
@@ -80,6 +105,40 @@ _AMINE_SMARTS = (
     "!$([N+]);!$([NX3]C#N)]"
 )
 
+# Per-site exclusions from the generic aliphatic-amine pKa 9-11 domain. Match atom
+# zero is the site that must remain neutral. These are structural site guards, not a
+# "most basic amine" molecule-level heuristic.
+_UNDECIDED_AMINE_SITE_SMARTS = (
+    # Ampicillin, amoxicillin and cephalexin: the phenylglycyl alpha-amino site.
+    "[NX3;H2][C;H1]([c])[CX3](=O)[NX3]",
+    # Sildenafil: the piperazine nitrogen opposite the sulfonamide nitrogen.
+    "[NX3;H0]1CC[NX3;H0]([SX4](=O)=O)CC1",
+    # Lisinopril: lower-basicity secondary amine between its two amino-acid units.
+    (
+        "[NX3;H1]([C;H1](CCc1ccccc1)C(=O)[OX2H1])"
+        "[C;H1](CCCC[NX3;H2])C(=O)[NX3]1CCC[C;H1]1C(=O)[OX2H1]"
+    ),
+)
+
+
+def _tetrazole_acidic_atoms(mol) -> set[int]:
+    """Return the mobile-H nitrogen of every neutral tetrazole tautomer.
+
+    A literal SMARTS such as ``c1nnn[nH]1`` encodes one traversal/tautomer and misses
+    losartan's ``c1nn[nH]n1`` depiction. Ring topology (five members, four nitrogens)
+    is invariant to that mobile-H placement, so the actual N-H atom can be charged
+    without normalising or enumerating tautomers.
+    """
+    hits: set[int] = set()
+    for ring in mol.GetRingInfo().AtomRings():
+        if len(ring) != 5:
+            continue
+        nitrogens = [index for index in ring if mol.GetAtomWithIdx(index).GetAtomicNum() == 7]
+        if len(nitrogens) != 4:
+            continue
+        hits.update(index for index in nitrogens if mol.GetAtomWithIdx(index).GetTotalNumHs() > 0)
+    return hits
+
 
 def _acidic_hydrogen_atoms(mol) -> set[int]:
     from rdkit import Chem
@@ -90,8 +149,9 @@ def _acidic_hydrogen_atoms(mol) -> set[int]:
         for match in mol.GetSubstructMatches(pattern):
             for index in match:
                 atom = mol.GetAtomWithIdx(index)
-                if atom.GetSymbol() in ("O", "N") and atom.GetTotalNumHs() > 0:
+                if atom.GetSymbol() == "O" and atom.GetTotalNumHs() > 0:
                     hits.add(index)
+    hits.update(_tetrazole_acidic_atoms(mol))
     return hits
 
 
@@ -149,6 +209,17 @@ def _basic_amine_atoms(mol) -> list[int]:
     return [match[0] for match in mol.GetSubstructMatches(pattern)]
 
 
+def _guarded_amine_atoms(mol) -> set[int]:
+    """Amine sites outside the generic aliphatic-amine pKa domain."""
+    from rdkit import Chem
+
+    guarded: set[int] = set()
+    for smarts in _UNDECIDED_AMINE_SITE_SMARTS:
+        pattern = Chem.MolFromSmarts(smarts)
+        guarded.update(match[0] for match in mol.GetSubstructMatches(pattern))
+    return guarded
+
+
 def protonate(smiles: str) -> str:
     """Return the dominant microspecies at pH 7.4 as canonical SMILES."""
     from rdkit import Chem
@@ -164,7 +235,12 @@ def protonate(smiles: str) -> str:
 
     acidic = _acidic_hydrogen_atoms(mol) - already_charged
     amidines = set(_basic_amidine_systems(mol)) - already_charged
-    amines = set(_basic_amine_atoms(mol)) - amidines - already_charged
+    amines = (
+        set(_basic_amine_atoms(mol))
+        - amidines
+        - already_charged
+        - _guarded_amine_atoms(mol)
+    )
 
     for index in acidic:
         atom = rw.GetAtomWithIdx(index)

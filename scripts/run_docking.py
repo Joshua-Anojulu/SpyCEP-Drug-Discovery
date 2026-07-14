@@ -1,217 +1,260 @@
-"""Full-library docking run against the SpyCEP 5XYA + 7EDD receptor ensemble.
+"""Run one primary-screen docking workflow from the frozen attempt relation.
 
-Prepares every approved compound (with desalting) to PDBQT, docks each into both
-receptors with AutoDock Vina (fixed seed), ranks by ligand efficiency, and runs
-catalytic-triad interaction analysis. Fault-tolerant: a ligand-prep or docking
-failure is recorded and skipped, not fatal.
-
-Run (needs tools/vina.exe and the receptor-prep extra):
-    .\\.venv\\Scripts\\python.exe scripts\\run_docking.py
+This entry point performs every preparation before invoking Vina and fails loudly if
+the content-addressed QC or MMFF gates are stale or blocked.
 """
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
+from spycep_drug_discovery.attempt_manifest import validate_attempt_manifest
 from spycep_drug_discovery.docking import (
+    DEFAULT_CPU,
     DEFAULT_EXHAUSTIVENESS,
     DEFAULT_NUM_MODES,
+    DEFAULT_SCORING,
     DEFAULT_SEED,
     DEFAULT_TIMEOUT_SECONDS,
     DockingError,
+    build_run_manifest,
     dock_ligand,
 )
-from spycep_drug_discovery.docking_analysis import rank_docking_results, write_ranking_csv
+from spycep_drug_discovery.docking_analysis import (
+    rank_docking_results,
+    write_ranking_csv,
+)
+from spycep_drug_discovery.environment import runtime_versions
 from spycep_drug_discovery.interaction_analysis import analyze_pose_interactions
-from spycep_drug_discovery.ligand_preparation import (
-    PHYSIOLOGICAL_PH,
-    LigandPreparationError,
-    prepare_ligand,
+from spycep_drug_discovery.ligand_preparation import prepare_ligand
+from spycep_drug_discovery.pdbqt_quality import validate_pdbqt_quality_gate
+from spycep_drug_discovery.preparation_audit import validate_preparation_audit
+from spycep_drug_discovery.species import (
+    catalog_state,
+    load_species_catalog,
+    sha256_file,
 )
 
+
 TIGHT = "--tight" in sys.argv[1:]
-# Reuse poses already on disk. Only safe when the ligand chemistry and the box are
-# unchanged since they were written, so it is opt-in rather than the default.
 RESUME = "--resume" in sys.argv[1:]
+WORKFLOW = "tight" if TIGHT else "wide"
 
 VINA = PROJECT_ROOT / "tools" / "vina.exe"
 MEEKO = PROJECT_ROOT / ".venv" / "Scripts" / "mk_prepare_ligand.exe"
-LIBRARY = PROJECT_ROOT / "docs" / "methods" / "compound_library_source.json"
-RECEPTORS = PROJECT_ROOT / "docs" / "methods" / "pdbqt_conversion.json"
-TIGHT_POCKETS = PROJECT_ROOT / "docs" / "methods" / "tight_pocket_definition.json"
+SPECIES = PROJECT_ROOT / "docs" / "methods" / "species_audit.json"
+ATTEMPTS = PROJECT_ROOT / "docs" / "methods" / "attempt_manifest.json"
+PREPARATION_AUDIT = PROJECT_ROOT / "docs" / "methods" / "mmff_preparation_audit.json"
+CONVERSION = PROJECT_ROOT / "docs" / "methods" / "pdbqt_conversion.json"
+QC = PROJECT_ROOT / "docs" / "methods" / "pdbqt_quality_review.json"
 POCKETS = PROJECT_ROOT / "docs" / "methods" / "pocket_definition.json"
-RESULT = PROJECT_ROOT / "docs" / "methods" / ("docking_result_tight.json" if TIGHT else "docking_result.json")
-RANKING = PROJECT_ROOT / "results" / "tables" / ("docking_ranking_tight.csv" if TIGHT else "docking_ranking.csv")
-POSE_DIR = PROJECT_ROOT / "results" / "docking" / ("library_tight" if TIGHT else "library")
+RESULT = PROJECT_ROOT / "docs" / "methods" / (
+    "docking_result_tight.json" if TIGHT else "docking_result.json"
+)
+RANKING = PROJECT_ROOT / "results" / "tables" / (
+    "docking_ranking_tight.csv" if TIGHT else "docking_ranking.csv"
+)
+POSE_DIR = PROJECT_ROOT / "results" / "docking" / (
+    "library_tight_stage2" if TIGHT else "library_stage2"
+)
 
 
-def _receptors() -> list[dict]:
-    if TIGHT:
-        pockets = json.loads(TIGHT_POCKETS.read_text(encoding="utf-8"))["pockets"]
-        return [
-            {
-                "pocket_id": p["pocket_id"],
-                "pdb_id": p["pdb_id"],
-                "receptor_pdbqt_path": p["receptor_pdbqt_path"],
-                "box_center_angstrom": p["box_center_angstrom"],
-                "box_size_angstrom": p["box_size_angstrom"],
-            }
-            for p in pockets
-        ]
-    manifest = json.loads(RECEPTORS.read_text(encoding="utf-8"))
-    return [
-        {
-            "pocket_id": r["pocket_id"],
-            "pdb_id": r["pdb_id"],
-            "receptor_pdbqt_path": r["output_paths"]["pdbqt"],
-            "box_center_angstrom": r["box_center_angstrom"],
-            "box_size_angstrom": r["box_size_angstrom"],
-        }
-        for r in manifest["receptors"]
-    ]
+def _atomic_json(path: Path, value: dict) -> None:
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+    os.replace(temporary, path)
+
+
+def _load_and_require_gates():
+    catalog = load_species_catalog(SPECIES)
+    attempts = json.loads(ATTEMPTS.read_text(encoding="utf-8"))
+    validate_attempt_manifest(attempts, catalog)
+    species_hash = sha256_file(SPECIES)
+    attempt_hash = sha256_file(ATTEMPTS)
+
+    conversion = json.loads(CONVERSION.read_text(encoding="utf-8"))
+    qc = json.loads(QC.read_text(encoding="utf-8"))
+    pockets = json.loads(POCKETS.read_text(encoding="utf-8"))
+    validate_pdbqt_quality_gate(
+        qc,
+        conversion,
+        pockets,
+        project_root=PROJECT_ROOT,
+        conversion_manifest_sha256=sha256_file(CONVERSION),
+        pocket_definition_sha256=sha256_file(POCKETS),
+        required_pocket_ids={
+            row["pocket_id"] for row in conversion["receptors"]
+        },
+    )
+
+    audit = json.loads(PREPARATION_AUDIT.read_text(encoding="utf-8"))
+    expected_keys = {
+        (row["entity_id"], row["state_id"])
+        for row in attempts["attempts"]
+    }
+    validate_preparation_audit(
+        audit,
+        species_catalog_sha256=species_hash,
+        attempt_manifest_sha256=attempt_hash,
+        expected_state_keys=expected_keys,
+    )
+    return catalog, attempts, pockets, species_hash, attempt_hash
 
 
 def main() -> None:
-    compounds = json.loads(LIBRARY.read_text(encoding="utf-8"))["compounds"]
-    receptors = _receptors()
-    active_site = json.loads(POCKETS.read_text(encoding="utf-8"))["active_site_residues"]
+    (
+        catalog,
+        attempt_manifest,
+        pockets,
+        species_hash,
+        attempt_hash,
+    ) = _load_and_require_gates()
+    versions = runtime_versions(VINA)
+    attempts = [
+        row
+        for row in attempt_manifest["attempts"]
+        if row["workflow"] == WORKFLOW
+    ]
+    if not attempts:
+        raise SystemExit(f"No legal {WORKFLOW} attempts in attempt manifest.")
 
-    prepared: list[dict] = []
-    prep_failures: list[dict] = []
-    for compound in compounds:
+    # Complete all preparation first. No LigandPreparationError is converted into a
+    # skipped compound, so Vina cannot start after a partial preparation population.
+    prepared_by_key = {}
+    for entity_id, state_id in sorted(
+        {(row["entity_id"], row["state_id"]) for row in attempts}
+    ):
+        state = catalog_state(catalog, entity_id, state_id)
+        ligand = prepare_ligand(
+            {
+                "entity_id": entity_id,
+                "state_id": state_id,
+                "smiles": state["source_smiles"],
+                "set": state.get("set"),
+            },
+            project_root=PROJECT_ROOT,
+            work_dir=PROJECT_ROOT / "data" / "compounds" / "sdf_stage2",
+            output_dir=PROJECT_ROOT / "data" / "compounds" / "pdbqt_stage2",
+            meeko_command=[MEEKO],
+            species_catalog=catalog,
+        )
+        prepared_by_key[(entity_id, state_id)] = ligand
+        print(
+            f"  prep ok   {entity_id}/{state_id} "
+            f"charge={ligand['formal_charge']:+d} MMFF={ligand['mmff_variant']}"
+        )
+
+    active_site = pockets["active_site_residues"]
+    run_records = []
+    valid_results = []
+    interactions = []
+    for attempt in attempts:
+        key = (attempt["entity_id"], attempt["state_id"])
+        ligand = prepared_by_key[key]
+        receptor = {
+            field: attempt[field]
+            for field in (
+                "pocket_id",
+                "pdb_id",
+                "receptor_pdbqt_path",
+                "box_center_angstrom",
+                "box_size_angstrom",
+            )
+        }
         try:
-            ligand = prepare_ligand(
-                compound,
+            record = dock_ligand(
+                vina_executable=VINA,
+                receptor=receptor,
+                entity_id=attempt["entity_id"],
+                state_id=attempt["state_id"],
+                ligand_pdbqt=PROJECT_ROOT / ligand["pdbqt_path"],
                 project_root=PROJECT_ROOT,
-                work_dir=PROJECT_ROOT / "data" / "compounds" / "sdf",
-                output_dir=PROJECT_ROOT / "data" / "compounds" / "pdbqt",
-                meeko_command=[MEEKO],
+                output_dir=POSE_DIR,
+                workflow=WORKFLOW,
+                species_catalog_sha256=species_hash,
+                attempt_manifest_sha256=attempt_hash,
+                software_versions=versions,
+                seed=DEFAULT_SEED,
+                exhaustiveness=DEFAULT_EXHAUSTIVENESS,
+                num_modes=DEFAULT_NUM_MODES,
+                cpu=DEFAULT_CPU,
+                scoring=DEFAULT_SCORING,
+                resume=RESUME,
+                timeout_seconds=DEFAULT_TIMEOUT_SECONDS,
             )
-            ligand["set"] = compound["set"]
-            prepared.append(ligand)
-            print(f"  prep ok   {compound['ligand_id']}  charge={ligand['formal_charge']:+d}")
-        except LigandPreparationError as exc:
-            # Only genuine preparation failures are recorded and skipped. Catching bare
-            # Exception here previously turned any code bug into a silent "compound
-            # failed to prepare", shrinking the library without anyone noticing.
-            prep_failures.append({"ligand_id": compound["ligand_id"], "error": str(exc)[:300]})
-            print(f"  prep FAIL {compound['ligand_id']}: {str(exc)[:120]}")
-
-    results: list[dict] = []
-    dock_failures: list[dict] = []
-    for ligand in prepared:
-        for receptor in receptors:
-            try:
-                row = dock_ligand(
-                    vina_executable=VINA,
-                    receptor=receptor,
-                    ligand_id=ligand["ligand_id"],
-                    ligand_pdbqt=PROJECT_ROOT / ligand["pdbqt_path"],
-                    project_root=PROJECT_ROOT,
-                    output_dir=POSE_DIR,
-                    resume=RESUME,
-                )
-            except DockingError as exc:
-                dock_failures.append(
-                    {"ligand_id": ligand["ligand_id"], "pocket_id": receptor["pocket_id"], "error": str(exc)[:200]}
-                )
-                print(f"  dock FAIL {ligand['ligand_id']} vs {receptor['pocket_id']}: {str(exc)[:100]}")
-                continue
-            row["set"] = ligand["set"]
-            row["role"] = ligand["set"]
-            row["heavy_atom_count"] = ligand["heavy_atom_count"]
-            row["docked_smiles"] = ligand["docked_smiles"]
-            row["formal_charge"] = ligand["formal_charge"]
-            row["undefined_stereocenter_count"] = ligand["undefined_stereocenter_count"]
-            row["embedded_isomeric_smiles"] = ligand["embedded_isomeric_smiles"]
-            row["interactions"] = analyze_pose_interactions(
-                PROJECT_ROOT / receptor["receptor_pdbqt_path"],
-                PROJECT_ROOT / row["out_path"],
-                active_site,
+        except DockingError as exc:
+            if exc.run_record is None:
+                raise
+            record = exc.run_record
+            run_records.append(record)
+            print(
+                f"  dock {record['status']:<19} "
+                f"{attempt['entity_id']}/{attempt['state_id']} vs {attempt['pocket_id']}: "
+                f"{record['cause']}"
             )
-            results.append(row)
-            print(f"  dock ok   {ligand['ligand_id']:<28} {receptor['pocket_id']:<32} best={row['best_affinity_kcal_mol']:.2f}")
+            continue
 
-    ranked = rank_docking_results(results)
+        record["set"] = ligand.get("set")
+        record["role"] = ligand.get("set")
+        record["heavy_atom_count"] = ligand["heavy_atom_count"]
+        record["docked_smiles"] = ligand["docked_smiles"]
+        record["formal_charge"] = ligand["formal_charge"]
+        run_records.append(record)
+        valid_results.append(record)
+        pose_interaction = analyze_pose_interactions(
+            PROJECT_ROOT / receptor["receptor_pdbqt_path"],
+            PROJECT_ROOT / record["out_path"],
+            active_site,
+        )
+        interactions.append(
+            {
+                "claim_key": record["claim_key"],
+                "entity_id": record["entity_id"],
+                "state_id": record["state_id"],
+                "species_key": record["species_key"],
+                "pocket_id": record["pocket_id"],
+                "best_affinity_kcal_mol": record["best_affinity_kcal_mol"],
+                **pose_interaction,
+            }
+        )
+        print(
+            f"  dock ok   {attempt['entity_id']}/{attempt['state_id']} "
+            f"vs {attempt['pocket_id']} "
+            f"best={record['best_affinity_kcal_mol']:.2f}"
+        )
+
+    ranked = rank_docking_results(valid_results)
     write_ranking_csv(ranked, RANKING)
-
-    manifest = {
-        "run_version": "2026-07-12",
-        "status": "full_library_docking_computational_prioritization_only",
-        "box_mode": "tight_triad_side_chain_centered" if TIGHT else "receptor_prep_box",
-        "seed": DEFAULT_SEED,
-        "exhaustiveness": DEFAULT_EXHAUSTIVENESS,
-        "num_modes": DEFAULT_NUM_MODES,
-        "vina_version": "AutoDock Vina v1.2.7",
-        "protonation_ph": PHYSIOLOGICAL_PH,
-        "protonation_tool": "explicit pKa rule set (spycep_drug_discovery.protonation)",
-        "per_docking_timeout_seconds": DEFAULT_TIMEOUT_SECONDS,
-        "resumed_existing_poses": RESUME,
-        "receptor_ensemble": [r["pocket_id"] for r in receptors],
-        "boxes": [
-            {
-                "pocket_id": r["pocket_id"],
-                "box_center_angstrom": r["box_center_angstrom"],
-                "box_size_angstrom": r["box_size_angstrom"],
-            }
-            for r in receptors
-        ],
-        "compounds_input": len(compounds),
-        "compounds_docked": len({row["ligand_id"] for row in results}),
-        "prep_failures": prep_failures,
-        "dock_failures": dock_failures,
-        "ligand_preparation": [
-            {
-                "ligand_id": ligand["ligand_id"],
-                "set": ligand["set"],
-                "input_smiles": ligand["input_smiles"],
-                "docked_smiles": ligand["docked_smiles"],
-                "embedded_isomeric_smiles": ligand["embedded_isomeric_smiles"],
-                "formal_charge": ligand["formal_charge"],
-                "heavy_atom_count": ligand["heavy_atom_count"],
-                "undefined_stereocenter_count": ligand["undefined_stereocenter_count"],
-                "pdbqt_sha256": ligand["pdbqt_sha256"],
-            }
-            for ligand in prepared
-        ],
-        # Per-docking provenance: the command, box, seed and output hash for every single
-        # Vina invocation. These were computed and then thrown away, while the README
-        # claimed the manifests recorded commands and output hashes.
-        "dockings": [
-            {
-                "ligand_id": row["ligand_id"],
-                "pocket_id": row["pocket_id"],
-                "command": row["command"],
-                "seed": row["seed"],
-                "exhaustiveness": row["exhaustiveness"],
-                "num_modes": row["num_modes"],
-                "best_affinity_kcal_mol": row["best_affinity_kcal_mol"],
-                "out_path": row["out_path"],
-                "out_sha256": row["out_sha256"],
-            }
-            for row in results
-        ],
-        "ranking": ranked,
-        "pose_interactions": [
-            {
-                "ligand_id": row["ligand_id"],
-                "set": row["set"],
-                "pocket_id": row["pocket_id"],
-                "best_affinity_kcal_mol": row["best_affinity_kcal_mol"],
-                "contacted_active_site_residues": row["interactions"]["contacted_active_site_residues"],
-                "contacts_catalytic_triad": row["interactions"]["contacts_catalytic_triad"],
-            }
-            for row in results
-        ],
-    }
-    RESULT.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
-    print(f"\nDocked {manifest['compounds_docked']}/{len(compounds)} compounds; "
-          f"prep failures {len(prep_failures)}, dock failures {len(dock_failures)}.")
-    print(f"Wrote {RANKING.relative_to(PROJECT_ROOT)} and {RESULT.relative_to(PROJECT_ROOT)}")
+    manifest = build_run_manifest(
+        workflow=WORKFLOW,
+        run_records=run_records,
+        species_catalog_sha256=species_hash,
+        attempt_manifest_sha256=attempt_hash,
+        software_versions=versions,
+        preparation_records=list(prepared_by_key.values()),
+        metadata={
+            "resume_requested": RESUME,
+            "qc_manifest": "docs/methods/pdbqt_quality_review.json",
+            "qc_manifest_sha256": sha256_file(QC),
+            "mmff_preparation_audit": "docs/methods/mmff_preparation_audit.json",
+            "mmff_preparation_audit_sha256": sha256_file(PREPARATION_AUDIT),
+            "seed": DEFAULT_SEED,
+            "exhaustiveness": DEFAULT_EXHAUSTIVENESS,
+            "num_modes": DEFAULT_NUM_MODES,
+            "cpu": DEFAULT_CPU,
+            "scoring": DEFAULT_SCORING,
+            "timeout_seconds": DEFAULT_TIMEOUT_SECONDS,
+        },
+    )
+    manifest["ranking"] = ranked
+    manifest["pose_interactions"] = interactions
+    _atomic_json(RESULT, manifest)
+    print(f"Wrote {RESULT.relative_to(PROJECT_ROOT)}")
 
 
 if __name__ == "__main__":

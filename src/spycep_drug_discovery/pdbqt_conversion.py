@@ -66,7 +66,22 @@ def _convert_receptor(
 ) -> dict[str, Any]:
     pocket_id = str(receptor["pocket_id"])
     prepared_pdb_path = _normalized_path(str(receptor["prepared_pdb_path"]))
+    source_path = project_root / prepared_pdb_path
+    if not source_path.is_file():
+        raise PdbqtConversionError(f"{pocket_id} prepared PDB is missing: {prepared_pdb_path}")
+    source_hash = _sha256(source_path)
+    expected_source_hash = receptor.get("sha256")
+    if expected_source_hash and source_hash != expected_source_hash:
+        raise PdbqtConversionError(
+            f"{pocket_id} prepared-PDB hash does not match receptor preparation manifest."
+        )
+
     output_stem = _relative_path(output_dir / pocket_id, project_root)
+    output_paths = _expected_output_paths(output_dir, pocket_id)
+    # Treat every expected output as one transaction; remove stale members and temps.
+    for path in output_paths.values():
+        path.unlink(missing_ok=True)
+        path.with_suffix(path.suffix + ".tmp").unlink(missing_ok=True)
     command = [str(part) for part in converter_command]
     command.extend(
         [
@@ -94,7 +109,6 @@ def _convert_receptor(
     if completed.returncode != 0:
         raise PdbqtConversionError(_failure_message(receptor, completed))
 
-    output_paths = _expected_output_paths(output_dir, pocket_id)
     missing_outputs = [str(path) for path in output_paths.values() if not path.is_file()]
     if missing_outputs:
         raise PdbqtConversionError(f"{pocket_id} conversion omitted expected files: {', '.join(missing_outputs)}")
@@ -104,10 +118,10 @@ def _convert_receptor(
         "pdb_id": receptor["pdb_id"],
         "chain_id": receptor["chain_id"],
         "source_prepared_pdb_path": prepared_pdb_path,
-        "source_prepared_pdb_sha256": receptor.get("sha256"),
+        "source_prepared_pdb_sha256": source_hash,
         "box_center_angstrom": receptor["box_center_angstrom"],
         "box_size_angstrom": receptor["box_size_angstrom"],
-        "command": command,
+        "command": _normalize_command(command, project_root),
         "exit_code": completed.returncode,
         "stdout_line_count": len(completed.stdout.splitlines()),
         "stderr_line_count": len(completed.stderr.splitlines()),
@@ -163,6 +177,21 @@ def _relative_path(path: Path, project_root: Path) -> str:
 
 def _normalized_path(path: str) -> str:
     return path.replace("\\", "/")
+
+
+def _normalize_command(command: Sequence[str], project_root: Path) -> list[str]:
+    normalized: list[str] = []
+    root = project_root.resolve()
+    for part in command:
+        path = Path(part)
+        if path.is_absolute():
+            try:
+                normalized.append(path.resolve().relative_to(root).as_posix())
+            except ValueError:
+                normalized.append(f"<ABSOLUTE>/{path.name}")
+        else:
+            normalized.append(part.replace("\\", "/"))
+    return normalized
 
 
 def _format_angstrom(value: Any) -> str:

@@ -73,3 +73,33 @@ def test_ranking_csv_emits_the_set_column(tmp_path):
     header, row = out.read_text(encoding="utf-8").splitlines()[:2]
     assert "set" in header.split(",")
     assert "custom_anti_virulence" in row
+
+
+
+def test_ranking_keeps_two_states_of_one_entity_distinct():
+    ranked = rank_docking_results(
+        [
+            {
+                "entity_id": "amoxicillin",
+                "state_id": "alpha_amine_neutral",
+                "ligand_id": "amoxicillin",
+                "pocket_id": "p1",
+                "best_affinity_kcal_mol": -5.0,
+                "heavy_atom_count": 25,
+            },
+            {
+                "entity_id": "amoxicillin",
+                "state_id": "alpha_ammonium",
+                "ligand_id": "amoxicillin",
+                "pocket_id": "p1",
+                "best_affinity_kcal_mol": -6.0,
+                "heavy_atom_count": 25,
+            },
+        ]
+    )
+
+    assert len(ranked) == 2
+    assert {tuple(row["species_key"]) for row in ranked} == {
+        ("amoxicillin", "alpha_amine_neutral"),
+        ("amoxicillin", "alpha_ammonium"),
+    }

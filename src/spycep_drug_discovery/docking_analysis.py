@@ -17,17 +17,22 @@ def rank_docking_results(results: Sequence[Mapping[str, Any]]) -> list[dict[str,
     a ligand achieves against any receptor; ensemble_mean_affinity averages the per-receptor
     bests as a simple cross-receptor consistency signal.
     """
-    per_ligand: dict[str, dict[str, Any]] = {}
-    per_receptor: dict[str, dict[str, float]] = defaultdict(dict)
+    per_ligand: dict[tuple[str, str], dict[str, Any]] = {}
+    per_receptor: dict[tuple[str, str], dict[str, float]] = defaultdict(dict)
     for row in results:
-        ligand_id = str(row["ligand_id"])
+        entity_id = str(row.get("entity_id") or row["ligand_id"])
+        state_id = str(row.get("state_id") or "state_01")
+        species_key = (entity_id, state_id)
         pocket_id = str(row["pocket_id"])
         affinity = float(row["best_affinity_kcal_mol"])
-        per_receptor[ligand_id][pocket_id] = affinity
+        per_receptor[species_key][pocket_id] = affinity
         per_ligand.setdefault(
-            ligand_id,
+            species_key,
             {
-                "ligand_id": ligand_id,
+                "ligand_id": entity_id,
+                "entity_id": entity_id,
+                "state_id": state_id,
+                "species_key": [entity_id, state_id],
                 # `set` is the custom-vs-FDA label the whole comparison turns on. It was
                 # previously dropped here, so every downstream consumer had to re-join
                 # against the library manifest and the emitted `role` column was always
@@ -39,8 +44,8 @@ def rank_docking_results(results: Sequence[Mapping[str, Any]]) -> list[dict[str,
         )
 
     ranked: list[dict[str, Any]] = []
-    for ligand_id, base in per_ligand.items():
-        receptor_bests = per_receptor[ligand_id]
+    for species_key, base in per_ligand.items():
+        receptor_bests = per_receptor[species_key]
         affinities = list(receptor_bests.values())
         best = min(affinities)
         heavy = base.get("heavy_atom_count")
@@ -76,6 +81,7 @@ def write_ranking_csv(ranked: Sequence[Mapping[str, Any]], out_path: Path) -> No
             [
                 "rank",
                 "ligand_id",
+                "state_id",
                 "set",
                 "role",
                 "heavy_atom_count",
@@ -90,6 +96,7 @@ def write_ranking_csv(ranked: Sequence[Mapping[str, Any]], out_path: Path) -> No
                 [
                     item["rank"],
                     item["ligand_id"],
+                    item["state_id"],
                     item.get("set") or "",
                     item.get("role") or "",
                     item.get("heavy_atom_count", ""),

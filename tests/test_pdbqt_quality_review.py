@@ -1,7 +1,14 @@
+import hashlib
 import json
+from pathlib import Path
 
 from scripts.review_pdbqt_conversion import write_pdbqt_quality_review
-from spycep_drug_discovery.pdbqt_quality import build_pdbqt_quality_review, parse_ignored_residue_keys
+from spycep_drug_discovery.pdbqt_quality import (
+    build_pdbqt_quality_review,
+    parse_ignored_residue_keys,
+    validate_pdbqt_quality_gate,
+)
+from spycep_drug_discovery.species import sha256_file
 
 
 def test_parse_ignored_residue_keys_reads_meeko_warning_tail():
@@ -20,15 +27,15 @@ def test_build_pdbqt_quality_review_records_catalytic_residue_status(tmp_path):
     )
 
     receptor = review["receptors"][0]
-    assert review["decision_status"] == "reviewed_caution_not_docking_approval"
-    assert receptor["quality_status"] == "reviewed_caution"
+    assert review["decision_status"] == "pass"
+    assert receptor["quality_status"] == "pass"
     assert receptor["ignored_residue_count"] == 2
     assert receptor["ignored_active_site_residue_keys"] == []
     assert receptor["missing_active_site_residue_keys"] == []
     assert receptor["pdbqt_active_site_residue_keys"] == ["A:151:ASP", "A:279:HIS", "A:617:SER"]
     assert receptor["pdbqt_active_site_atom_counts"] == {"A:151:ASP": 1, "A:279:HIS": 1, "A:617:SER": 1}
     assert receptor["box_matches_conversion_manifest"] is True
-    assert "not docking approval" in receptor["review_notes"]
+    assert "passed" in receptor["review_notes"]
 
 
 def test_build_pdbqt_quality_review_blocks_active_site_omissions(tmp_path):
@@ -41,8 +48,8 @@ def test_build_pdbqt_quality_review_blocks_active_site_omissions(tmp_path):
     )
 
     receptor = review["receptors"][0]
-    assert review["decision_status"] == "blocked_before_docking"
-    assert receptor["quality_status"] == "blocked"
+    assert review["decision_status"] == "block"
+    assert receptor["quality_status"] == "block"
     assert receptor["ignored_active_site_residue_keys"] == ["A:617"]
     assert receptor["missing_active_site_residue_keys"] == ["A:617:SER"]
 
@@ -69,9 +76,9 @@ def test_tracked_pdbqt_quality_review_records_no_active_site_omissions():
     review = json.loads(open("docs/methods/pdbqt_quality_review.json", encoding="utf-8").read())
     receptors = {receptor["pdb_id"]: receptor for receptor in review["receptors"]}
 
-    assert review["decision_status"] == "reviewed_caution_not_docking_approval"
+    assert review["decision_status"] == "pass"
     assert set(receptors) == {"5XYA", "7EDD"}
-    assert all(receptor["quality_status"] == "reviewed_caution" for receptor in receptors.values())
+    assert all(receptor["quality_status"] == "pass" for receptor in receptors.values())
     assert all(receptor["ignored_active_site_residue_keys"] == [] for receptor in receptors.values())
     assert all(receptor["missing_active_site_residue_keys"] == [] for receptor in receptors.values())
     assert all(receptor["box_matches_conversion_manifest"] is True for receptor in receptors.values())
@@ -80,18 +87,30 @@ def test_tracked_pdbqt_quality_review_records_no_active_site_omissions():
 def _project_with_pdbqt(tmp_path, active_site_residues):
     project_root = tmp_path / "project"
     pdbqt_dir = project_root / "data" / "processed" / "pdbqt"
+    receptor_dir = project_root / "data" / "processed" / "receptors"
     docs_dir = project_root / "docs" / "methods"
     pdbqt_dir.mkdir(parents=True)
+    receptor_dir.mkdir(parents=True)
     docs_dir.mkdir(parents=True)
-    pdbqt_dir.joinpath("spycep_fake.pdbqt").write_text(
-        "\n".join(_pdbqt_line(residue_key, index) for index, residue_key in enumerate(active_site_residues, start=1))
-        + "\n",
-        encoding="utf-8",
+    pdbqt_dir.joinpath("spycep_fake.pdbqt").write_bytes(
+        _pdbqt_text(active_site_residues).encode("utf-8")
     )
+    receptor_dir.joinpath("spycep_fake.pdb").write_bytes(b"ATOM source\n")
     return project_root
 
 
+def _pdbqt_text(active_site_residues):
+    return (
+        "\n".join(
+            _pdbqt_line(residue_key, index)
+            for index, residue_key in enumerate(active_site_residues, start=1)
+        )
+        + "\n"
+    )
+
+
 def _conversion_manifest(ignored_residues):
+    default_active = ("A:151:ASP", "A:279:HIS", "A:617:SER")
     return {
         "conversion_version": "2026-07-02",
         "allow_bad_res": True,
@@ -100,10 +119,20 @@ def _conversion_manifest(ignored_residues):
                 "pocket_id": "spycep_fake",
                 "pdb_id": "FAKE",
                 "chain_id": "A",
+                "source_prepared_pdb_path": "data/processed/receptors/spycep_fake.pdb",
+                "source_prepared_pdb_sha256": hashlib.sha256(b"ATOM source\n").hexdigest(),
                 "box_center_angstrom": {"x": -43.74, "y": 28.233, "z": 26.561},
                 "box_size_angstrom": {"x": 22.0, "y": 22.0, "z": 27.5},
-                "stderr_tail": f"- Template matching failed for: {list(ignored_residues)!r} Ignored due to allow_bad_res.",
+                "stderr_tail": (
+                    f"- Template matching failed for: {list(ignored_residues)!r} "
+                    "Ignored due to allow_bad_res."
+                ),
                 "output_paths": {"pdbqt": "data/processed/pdbqt/spycep_fake.pdbqt"},
+                "output_sha256": {
+                    "pdbqt": hashlib.sha256(
+                        _pdbqt_text(default_active).encode("utf-8")
+                    ).hexdigest()
+                },
             }
         ],
     }
@@ -153,3 +182,49 @@ def test_parse_ignored_residue_keys_fails_closed_on_unparseable_warning():
 
 def test_parse_ignored_residue_keys_reports_none_when_meeko_omitted_nothing():
     assert parse_ignored_residue_keys("mk_prepare_receptor wrote 1 file.\n") == ()
+
+
+
+def test_tracked_primary_qc_gate_requires_exact_content_hashes():
+    project_root = Path(".")
+    conversion_path = Path("docs/methods/pdbqt_conversion.json")
+    pocket_path = Path("docs/methods/pocket_definition.json")
+    review = json.loads(open("docs/methods/pdbqt_quality_review.json", encoding="utf-8").read())
+    conversion = json.loads(conversion_path.read_text(encoding="utf-8"))
+    pockets = json.loads(pocket_path.read_text(encoding="utf-8"))
+
+    validate_pdbqt_quality_gate(
+        review,
+        conversion,
+        pockets,
+        project_root=project_root,
+        conversion_manifest_sha256=sha256_file(conversion_path),
+        pocket_definition_sha256=sha256_file(pocket_path),
+    )
+    assert review["decision_status"] == "pass"
+    assert all(row["quality_status"] == "pass" for row in review["receptors"])
+
+
+def test_tracked_speb_qc_gate_verifies_cys192_his340_and_hashes():
+    project_root = Path(".")
+    conversion_path = Path("docs/methods/speb_pdbqt_conversion.json")
+    pocket_path = Path("docs/methods/speb_pocket_definition.json")
+    review_path = Path("docs/methods/speb_pdbqt_quality_review.json")
+    review = json.loads(review_path.read_text(encoding="utf-8"))
+    conversion = json.loads(conversion_path.read_text(encoding="utf-8"))
+    pockets = json.loads(pocket_path.read_text(encoding="utf-8"))
+
+    validate_pdbqt_quality_gate(
+        review,
+        conversion,
+        pockets,
+        project_root=project_root,
+        conversion_manifest_sha256=sha256_file(conversion_path),
+        pocket_definition_sha256=sha256_file(pocket_path),
+        required_pocket_ids={"speb_6ukd_active_site"},
+    )
+    assert review["upstream_source"]["path"] == "data/structures/6UKD.pdb"
+    assert review["upstream_source"]["hash_matches"] is True
+    receptor = review["receptors"][0]
+    assert receptor["pdbqt_active_site_residue_keys"] == ["A:192:CYS", "A:340:HIS"]
+    assert receptor["missing_active_site_residue_keys"] == []

@@ -38,3 +38,6 @@ results/tables/*
 !results/rankings/.gitkeep
 !results/figures/.gitkeep
 !results/tables/.gitkeep
+
+# Stale pytest temp dir (OneDrive-locked; pytest no longer writes here)
+.pytest_tmp/

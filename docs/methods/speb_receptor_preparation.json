@@ -1,0 +1,29 @@
+{
+  "preparation_version": "2026-07-13-speb",
+  "source_pocket_definition": "docs/methods/speb_pocket_definition.json",
+  "source_structure_path": "data/structures/6UKD.pdb",
+  "source_structure_sha256": "27282ef4a2e6037ada91d3dc1092804f0abb4cd632186515469c7bfbc8b3da6b",
+  "receptors": [
+    {
+      "pocket_id": "speb_6ukd_active_site",
+      "pdb_id": "6UKD",
+      "chain_id": "A",
+      "prepared_pdb_path": "data/processed/receptors/speb_6ukd_active_site.pdb",
+      "sha256": "7d8ca2810de261079cf60c47a1787aac128b845615f57d1822884c05e5ed78b2",
+      "box_center_angstrom": {
+        "x": -22.033,
+        "y": -17.103,
+        "z": 18.373
+      },
+      "box_size_angstrom": {
+        "x": 18.0,
+        "y": 18.0,
+        "z": 18.0
+      },
+      "retained_atom_records": 1974,
+      "converted_mse_records": 0,
+      "removed_heterogen_records": 350,
+      "dropped_altloc_records": 26
+    }
+  ]
+}

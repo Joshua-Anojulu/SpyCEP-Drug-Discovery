@@ -535,3 +535,82 @@ The five non-blocking refinements from round 9 were applied immediately (28 J/M/
 
 NO CODE WAS WRITTEN DURING EITHER ACT. Awaiting user sign-off at gate #2.
 
+## Act 3 — Build (Codex, workspace-write)
+
+### Round 1 — Codex build
+
+Sandbox repair required first: codex workspace-write failed with 'helper=codex-windows-sandbox-setup.exe error=program not found'.
+Root cause was NOT a missing file — the helper ships in codex-resources/ and was present on disk. Codex spawns it by BARE NAME,
+so it relies on a PATH lookup, and codex-resources/ was not on PATH. Fixed per-invocation with a PATH prefix
+(a persistent user-PATH edit was correctly refused as out of scope for 'repair the sandbox').
+
+Codex delivered: 22 files modified, 19 new (2219 insertions). 82 entities / 85 states catalogued, 335 legal attempts derived,
+81-state MMFF94s audit, primary + SpeB receptor QC gates, claimed 155 tests passing.
+
+### Claude's verdict — VERIFIED INDEPENDENTLY (Codex's claims are advisory)
+
+PROOF DISCREPANCY (found, fixed): Codex reported "155 passed". That was true IN ITS SANDBOX ONLY. It had added
+`--basetemp=.pytest_tmp` to pyproject.toml, redirecting pytest's temp dir INTO the repo — which lives in OneDrive,
+whose sync process locks the directory. In the real environment this produced PermissionError [WinError 5] across
+test_targets.py. I reverted the workaround (keeping its correct version pins: rdkit==2025.9.6, meeko==0.7.1).
+Suite now genuinely passes 155/155 in the user's environment. This is exactly why the proof is re-run, never trusted.
+
+CHEMISTRY VERIFIED EMPIRICALLY (9/9), not merely via Codex's own tests:
+  ampicillin -1, amoxicillin -1, cephalexin -1 (beta-lactam alpha-amino no longer wrongly protonated)
+  losartan -1 (was NEUTRAL — the tetrazole tautomer bug), lisinopril -1 (was net 0), sildenafil neutral (was +1)
+  azithromycin +2 PRESERVED (the case a naive "most basic amine only" rule would have destroyed)
+  metformin +1 (not +3), benzamidine +1
+STATE-ROBUSTNESS IS ACTUALLY USED WHERE IT MATTERS: amoxicillin, ampicillin and cephalexin are classified AMBIGUOUS,
+each carrying BOTH states (net -1 and net 0) for docking. These are precisely the compounds contaminating the SpeB
+control. Their classification_evidence explicitly REFUSES to claim an abundance, and cites the real papers surfaced
+during the review rounds (amoxicillin microspeciation; ampicillin PMC; cephalexin RSC). NOT fabricated.
+
+DEFECT FOUND — the one that matters most: the 24 protonation reference cases cite PUBCHEM URLS AND NOTHING ELSE.
+No pKa value, no literature source, no evidence tier — the record is just {name, smiles, citation:pubchem, expected}.
+This fails the spec on the exact point CODEX ITSELF raised in round 1: "citing PubChem proves structure rather than
+solution microspeciation." The README claim "validated against literature charges for 24 reference compounds" would
+therefore STILL BE FALSE — cited-looking, but backed by the wrong kind of evidence. Codex cannot fix this (no web
+access; asking it for literature citations would invite fabrication, which is strictly worse). Claude takes over:
+fetching real, verifiable pKa sources with anti-fabrication rules, recording pka value + site + conditions + source +
+evidence tier per compound, marking NO_SOURCE_FOUND honestly where none exists, and rewording the README to exactly
+what the evidence supports.
+
+### Round 2 — Claude takeover (citation evidence)
+
+Codex could not fix the citation defect (no web access; asking it for literature citations would invite fabricated DOIs
+— strictly worse than the honest-but-inadequate PubChem links it produced). Claude took over per the skill's takeover rule.
+
+Three parallel researchers fetched REAL pKa evidence under hard anti-fabrication rules (must load the page; never
+reconstruct a DOI/author/year from memory; NO_SOURCE_FOUND is an acceptable answer). Results, all recorded in
+docs/methods/protonation_reference_cases.json with pka value + site + conditions + source URL + verbatim quote + tier:
+  COMPOUND_SPECIFIC_EXPERIMENTAL 16 | CURATED_EXPERIMENTAL_COMPILATION 3 | SECONDARY_REVIEW 3 | NO_SOURCE_FOUND 2
+
+TWO GENUINE NO_SOURCE_FOUND — and both are the exact defect class this project exists to eliminate, found in the
+PUBLISHED LITERATURE:
+  - pentamidine: no experimental pKa exists in any fetchable source. The circulating "pKa 12.1" — stated as fact with NO
+    reference in a PLoS Pathogens paper — is almost certainly DrugBank's PREDICTED 12.13 laundered into prose. A 2022
+    paper explicitly labels it "predicted". Its +2 state is justified as a close-analog inference from benzamidine
+    (experimental 11.6) and labelled as such, never as a pentamidine measurement.
+  - fosfomycin: the only value printed in a peer-reviewed paper we could open is EXPLICITLY a Chemicalize PREDICTION
+    (1.25/7.82). The 1.8/6.5 pair in search results traces to a paywalled paper that could not be opened.
+Also refused: warfarin's canonical 5.05 (unverifiable), azithromycin's popular 8.74/9.45 pair (unverifiable — used the
+verified 8.1/8.8, which still gives +2), metformin's FDA-label 12.4 (every accessdata.fda.gov URL 404'd).
+
+RECLASSIFICATION DRIVEN BY THE EVIDENCE: lisinopril moved UNAMBIGUOUS -> AMBIGUOUS. The best source (potentiometry +
+1H NMR-pH, 25 C, I=0.15 M, with explicit site assignment) publishes a speciation table AT PLASMA pH: HLis- 65.04%,
+neutral double-zwitterion H2Lis 34.93%. A 35% minor species is far too large to assert away. It now joins the three
+beta-lactams and is docked in BOTH states. Catalog: 82 entities / 86 states / 4 AMBIGUOUS; 339 derived legal attempts;
+MMFF94s cap-2000 audit passes for all 82 unique states.
+
+THE TEST THAT LET THE DEFECT THROUGH IS FIXED. The old assertion was `case["citation"].startswith("https://")` — which a
+PubChem URL satisfies perfectly. That is precisely how 24 structure links came to stand in for pKa evidence while the
+README claimed "validated against literature charges". The new test asserts the tier is valid, that the pKa source is
+NOT PubChem, that a value + citation + verbatim quote exist, and that NO_SOURCE_FOUND compounds assert no value at all.
+
+README corrected: the "24 reference compounds" claim now states the real tier breakdown; "nothing hand-entered" now names
+the one deliberate exception (the ambiguous states are a HYPOTHESIS, not a result — we dock both rather than assert one);
+the false "per-docking commands" claim is replaced with what the pipeline now actually does; and a STATUS BANNER warns
+that all results below are STALE pending the redock.
+
+PROOF: 157 passed (Claude's own run, in the user's real environment).
+

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from spycep_drug_discovery.paths import project_root as find_project_root
 from spycep_drug_discovery.pdbqt_quality import build_pdbqt_quality_review
+from spycep_drug_discovery.species import sha256_file
 
 
 def parse_args() -> argparse.Namespace:
@@ -56,6 +57,8 @@ def write_pdbqt_quality_review(
         conversion_manifest=conversion_manifest,
         pocket_definition=pocket_definition,
         project_root=project_root,
+        conversion_manifest_sha256=sha256_file(conversion_manifest_path),
+        pocket_definition_sha256=sha256_file(pocket_definition_path),
     )
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     manifest_path.write_text(json.dumps(review, indent=2) + "\n", encoding="utf-8")

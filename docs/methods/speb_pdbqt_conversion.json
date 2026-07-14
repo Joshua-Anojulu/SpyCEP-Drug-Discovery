@@ -1,0 +1,77 @@
+{
+  "conversion_version": "2026-07-02",
+  "source_receptor_preparation": "docs/methods/speb_receptor_preparation.json",
+  "source_preparation_version": "2026-07-13-speb",
+  "tool": {
+    "name": "Meeko mk_prepare_receptor",
+    "command_path": ".venv/Scripts/mk_prepare_receptor.exe",
+    "meeko_version": "0.7.1",
+    "rdkit_version": "2025.09.6",
+    "gemmi_version": "0.7.5",
+    "scipy_version": "1.18.0"
+  },
+  "allow_bad_res": true,
+  "allow_bad_res_reason": "SpyCEP crystal structures contain incomplete residues; direct Meeko template matching fails without --allow_bad_res. Generated receptor PDBQT files require review before docking.",
+  "rules": [
+    "Convert only receptors approved in docs/methods/receptor_preparation.json.",
+    "Use Meeko mk_prepare_receptor with the tracked active-site box center and size.",
+    "Use --allow_bad_res because the selected SpyCEP structures contain incomplete residues.",
+    "Record output hashes and command arguments before any docking run."
+  ],
+  "receptors": [
+    {
+      "pocket_id": "speb_6ukd_active_site",
+      "pdb_id": "6UKD",
+      "chain_id": "A",
+      "source_prepared_pdb_path": "data/processed/receptors/speb_6ukd_active_site.pdb",
+      "source_prepared_pdb_sha256": "7d8ca2810de261079cf60c47a1787aac128b845615f57d1822884c05e5ed78b2",
+      "box_center_angstrom": {
+        "x": -22.033,
+        "y": -17.103,
+        "z": 18.373
+      },
+      "box_size_angstrom": {
+        "x": 18.0,
+        "y": 18.0,
+        "z": 18.0
+      },
+      "command": [
+        ".venv/Scripts/mk_prepare_receptor.exe",
+        "--read_pdb",
+        "data/processed/receptors/speb_6ukd_active_site.pdb",
+        "-o",
+        "data/processed/pdbqt/speb_6ukd_active_site",
+        "--write_pdbqt",
+        "--write_json",
+        "--write_vina_box",
+        "--box_center",
+        "-22.033",
+        "-17.103",
+        "18.373",
+        "--box_size",
+        "18.000",
+        "18.000",
+        "18.000",
+        "--allow_bad_res"
+      ],
+      "exit_code": 0,
+      "stdout_line_count": 6,
+      "stderr_line_count": 33,
+      "stderr": "No template matched for residue_key='A:321'\ntried 6 templates for residue_key='A:321'excess_H_ok=False\nLYS        heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess=set()\nNLYS       heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess={4}\nCLYS       heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess={1}\nLYN        heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess=set()\nNLYN       heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess={4}\nCLYN       heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess={1}\n\nmatched with excess inter-residue bond(s): A:321\nNo template matched for residue_key='A:400'\ntried 6 templates for residue_key='A:400'excess_H_ok=False\nGLU        heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess=set()\nNGLU       heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess={4}\nCGLU       heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess={1}\nGLH        heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess=set()\nNGLH       heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess={4}\nCGLH       heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess={1}\n\nmatched with excess inter-residue bond(s): A:400\nNo template matched for residue_key='A:402'\ntried 9 templates for residue_key='A:402'excess_H_ok=False\nHIE        heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss={0} bond_excess=set()\nHID        heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss={0} bond_excess=set()\nHIP        heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss={0} bond_excess=set()\nNHIE       heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss={0} bond_excess={4}\nNHID       heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss={0} bond_excess={4}\nNHIP       heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss={0} bond_excess={4}\nCHIE       heavy_miss=6 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess=set()\nCHID       heavy_miss=6 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess=set()\nCHIP       heavy_miss=6 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess=set()\n\n- Template matching failed for: ['A:321', 'A:400', 'A:402'] Ignored due to allow_bad_res.\n",
+      "stderr_tail": "NGLU       heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess={4}\nCGLU       heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess={1}\nGLH        heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess=set()\nNGLH       heavy_miss=4 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess={4}\nCGLH       heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess={1}\n\nmatched with excess inter-residue bond(s): A:400\nNo template matched for residue_key='A:402'\ntried 9 templates for residue_key='A:402'excess_H_ok=False\nHIE        heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss={0} bond_excess=set()\nHID        heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss={0} bond_excess=set()\nHIP        heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss={0} bond_excess=set()\nNHIE       heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss={0} bond_excess={4}\nNHID       heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss={0} bond_excess={4}\nNHIP       heavy_miss=5 heavy_excess=0 H_excess=[] bond_miss={0} bond_excess={4}\nCHIE       heavy_miss=6 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess=set()\nCHID       heavy_miss=6 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess=set()\nCHIP       heavy_miss=6 heavy_excess=0 H_excess=[] bond_miss=set() bond_excess=set()\n\n- Template matching failed for: ['A:321', 'A:400', 'A:402'] Ignored due to allow_bad_res.",
+      "output_paths": {
+        "pdbqt": "data/processed/pdbqt/speb_6ukd_active_site.pdbqt",
+        "json": "data/processed/pdbqt/speb_6ukd_active_site.json",
+        "box_txt": "data/processed/pdbqt/speb_6ukd_active_site.box.txt",
+        "box_pdb": "data/processed/pdbqt/speb_6ukd_active_site.box.pdb"
+      },
+      "output_sha256": {
+        "pdbqt": "9520792bc7660cc77faa108775195e2bd2b50e70e46fffe4d2aaed2c447e794a",
+        "json": "edd9829359400698d4fa07b8b7192c259a57e3b542ba194a453ce260f3605d2a",
+        "box_txt": "74f485e01ec58337401fc037fa489416652ff10f9c95160086d57e06e2c6ec61",
+        "box_pdb": "7782c48c386ff1b2fd762aa4e9380738c124091884ab6858165c82bcd533108d"
+      },
+      "pdbqt_atom_records": 2410
+    }
+  ]
+}

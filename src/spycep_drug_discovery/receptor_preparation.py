@@ -90,7 +90,9 @@ def prepare_receptors(
         source_path = structure_dir / f"{pdb_id}.pdb"
         cleaned = clean_receptor_pdb_text(source_path.read_text(encoding="utf-8"), chain_id=chain_id)
         output_path = output_dir / f"{pocket_id}.pdb"
-        output_path.write_text(cleaned.pdb_text, encoding="utf-8")
+        # Write the exact bytes hashed below; Windows newline translation previously made
+        # every prepared-PDB manifest hash false immediately after generation.
+        output_path.write_bytes(cleaned.pdb_text.encode("utf-8"))
         receptors.append(_manifest_row(pocket, cleaned, output_path))
 
     return {

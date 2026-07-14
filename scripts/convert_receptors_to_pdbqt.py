@@ -53,7 +53,7 @@ def main() -> None:
         output_dir=root / args.output_dir,
         manifest_path=root / args.manifest,
         converter_command=converter_command,
-        tool_info=meeko_tool_info(converter_command),
+        tool_info=meeko_tool_info(converter_command, root),
         allow_bad_res=not args.strict_residues,
     )
     print(f"Wrote {root / args.manifest}")
@@ -76,7 +76,7 @@ def write_pdbqt_conversion(
         project_root=project_root,
         output_dir=output_dir,
         converter_command=converter_command,
-        tool_info=tool_info or meeko_tool_info(converter_command),
+        tool_info=tool_info or meeko_tool_info(converter_command, project_root),
         allow_bad_res=allow_bad_res,
     )
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
@@ -98,15 +98,32 @@ def default_converter_command(project_root: Path) -> tuple[str, ...]:
     return ("mk_prepare_receptor",)
 
 
-def meeko_tool_info(converter_command: Sequence[str | Path]) -> dict[str, Any]:
+def meeko_tool_info(
+    converter_command: Sequence[str | Path],
+    project_root: Path | None = None,
+) -> dict[str, Any]:
     return {
         "name": "Meeko mk_prepare_receptor",
-        "command_path": str(converter_command[0]) if converter_command else None,
+        "command_path": (
+            _normalised_tool_path(converter_command[0], project_root)
+            if converter_command
+            else None
+        ),
         "meeko_version": _distribution_version("meeko"),
         "rdkit_version": _rdkit_version(),
         "gemmi_version": _distribution_version("gemmi"),
         "scipy_version": _distribution_version("scipy"),
     }
+
+
+def _normalised_tool_path(value: str | Path, project_root: Path | None) -> str:
+    path = Path(value)
+    if project_root is not None and path.is_absolute():
+        try:
+            return path.resolve().relative_to(project_root.resolve()).as_posix()
+        except ValueError:
+            return f"<ABSOLUTE>/{path.name}"
+    return str(value).replace("\\", "/")
 
 
 def _distribution_version(distribution_name: str) -> str | None:

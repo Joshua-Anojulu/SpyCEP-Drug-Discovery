@@ -1,20 +1,31 @@
 {
-  "review_version": "2026-07-12",
+  "review_version": "2026-07-13-content-addressed",
   "source_pdbqt_conversion": "docs/methods/pdbqt_conversion.json",
+  "source_pdbqt_conversion_sha256": "5e1d646f86f4e3bb74e3af358097b6fbfccf30e9225c0cad8e5968ad7cca68d9",
   "source_pocket_definition": "docs/methods/pocket_definition.json",
-  "decision_status": "reviewed_caution_not_docking_approval",
+  "source_pocket_definition_sha256": "a332fd27d1b01d3beeb534ffe0d9cb7f6467897b81492b3bc2450097cfcb4276",
+  "decision_status": "pass",
   "rules": [
     "Parse Meeko --allow_bad_res residue omissions from the full conversion stderr.",
-    "Block docking if any omitted residue overlaps the tracked SpyCEP catalytic active-site residues.",
-    "Block docking if any tracked catalytic active-site residue is absent from the generated receptor PDBQT.",
-    "Treat passing QC as a review checkpoint, not final docking approval."
+    "Block if an omitted residue overlaps the tracked catalytic active-site residues.",
+    "Block if a tracked catalytic residue is absent from the reviewed receptor PDBQT.",
+    "Block if source-PDB, pocket-definition, or reviewed-PDBQT hashes disagree."
   ],
+  "upstream_source": null,
   "receptors": [
     {
       "pocket_id": "spycep_5xya_aes_active_site",
       "pdb_id": "5XYA",
       "chain_id": "A",
-      "quality_status": "reviewed_caution",
+      "quality_status": "pass",
+      "source_prepared_pdb_path": "data/processed/receptors/spycep_5xya_aes_active_site.pdb",
+      "source_prepared_pdb_sha256": "181b43f4a17b6dd750893b1357ddaf910527f88622e637ca7243cec5d279dee3",
+      "source_hash_matches_conversion": true,
+      "pocket_definition_sha256": "a332fd27d1b01d3beeb534ffe0d9cb7f6467897b81492b3bc2450097cfcb4276",
+      "pocket_record_sha256": "c851964a0af7014176700b3ef00d8edbeaa37d33827884bf56b1aa3f1b40a490",
+      "reviewed_pdbqt_path": "data/processed/pdbqt/spycep_5xya_aes_active_site.pdbqt",
+      "reviewed_pdbqt_sha256": "7bfea8db62864e033668ec67f2cdc1a5d4ea27270710a3eb7195cc6237fc0842",
+      "pdbqt_hash_matches_conversion": true,
       "ignored_residue_count": 81,
       "ignored_residue_keys": [
         "A:118",
@@ -112,13 +123,21 @@
         "A:617:SER": 8
       },
       "box_matches_conversion_manifest": true,
-      "review_notes": "No active-site residue omission detected; this is a QC checkpoint, not docking approval."
+      "review_notes": "Content-addressed receptor QC passed."
     },
     {
       "pocket_id": "spycep_7edd_native_active_site",
       "pdb_id": "7EDD",
       "chain_id": "A",
-      "quality_status": "reviewed_caution",
+      "quality_status": "pass",
+      "source_prepared_pdb_path": "data/processed/receptors/spycep_7edd_native_active_site.pdb",
+      "source_prepared_pdb_sha256": "7364599a1bea22c9dd82b09f54d269542ebb298ba48a8971d8987e98a98982e3",
+      "source_hash_matches_conversion": true,
+      "pocket_definition_sha256": "a332fd27d1b01d3beeb534ffe0d9cb7f6467897b81492b3bc2450097cfcb4276",
+      "pocket_record_sha256": "c666571d6d6b2f61b838d595840be61e1d6f6c42370d6b5f023d8bcb9bc462bb",
+      "reviewed_pdbqt_path": "data/processed/pdbqt/spycep_7edd_native_active_site.pdbqt",
+      "reviewed_pdbqt_sha256": "ab8189f7a3bb7b4c35fed6cdabf8e38e6ff0d87e8296de36bc9eceefd5384c6f",
+      "pdbqt_hash_matches_conversion": true,
       "ignored_residue_count": 24,
       "ignored_residue_keys": [
         "A:182",
@@ -159,7 +178,7 @@
         "A:617:SER": 8
       },
       "box_matches_conversion_manifest": true,
-      "review_notes": "No active-site residue omission detected; this is a QC checkpoint, not docking approval."
+      "review_notes": "Content-addressed receptor QC passed."
     }
   ]
 }

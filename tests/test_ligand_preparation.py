@@ -108,7 +108,7 @@ def test_prepare_ligand_raises_when_meeko_fails(tmp_path):
 def test_prepare_ligand_does_not_report_a_stale_pdbqt_as_this_runs_output(tmp_path):
     out_dir = tmp_path / "out"
     out_dir.mkdir()
-    stale = out_dir / "benzamidine.pdbqt"
+    stale = out_dir / "benzamidine__state_01.pdbqt"
     stale.write_text("ATOM  stale pose from a previous run\n", encoding="utf-8")
     compound = {"ligand_id": "benzamidine", "smiles": "NC(=N)c1ccccc1"}
 
@@ -122,3 +122,64 @@ def test_prepare_ligand_does_not_report_a_stale_pdbqt_as_this_runs_output(tmp_pa
         )
 
     assert not stale.exists()
+
+
+def test_catalog_backed_ambiguous_states_are_consumed_verbatim():
+    import json
+    from rdkit import Chem
+
+    catalog = json.loads(open("docs/methods/species_audit.json", encoding="utf-8").read())
+    source = next(
+        row["source_smiles"]
+        for row in catalog["states"]
+        if row["entity_id"] == "amoxicillin"
+    )
+    neutral = docked_species_smiles(
+        source,
+        entity_id="amoxicillin",
+        state_id="alpha_amine_neutral",
+        species_catalog=catalog,
+    )
+    ammonium = docked_species_smiles(
+        source,
+        entity_id="amoxicillin",
+        state_id="alpha_ammonium",
+        species_catalog=catalog,
+    )
+
+    assert Chem.GetFormalCharge(Chem.MolFromSmiles(neutral)) == -1
+    assert Chem.GetFormalCharge(Chem.MolFromSmiles(ammonium)) == 0
+    assert neutral != ammonium
+
+
+def test_smiles_to_sdf_records_mmff94s_cap_and_separate_stereo_evidence(tmp_path):
+    out = tmp_path / "ibuprofen.sdf"
+    record = smiles_to_sdf("CC(C)Cc1ccc(cc1)C(C)C(=O)O", out, seed=42)
+
+    assert record["mmff_variant"] == "MMFF94s"
+    assert record["mmff_max_iterations"] == 2000
+    assert record["mmff_status"] == 0
+    assert record["mmff_converged"] is True
+    assert record["source_undefined_centers"] == [10]
+    assert record["embedded_unassigned_centers"] == []
+    assert "@" in record["embedded_isomeric_smiles"]
+
+
+def test_prepare_ligand_filenames_include_entity_and_state(tmp_path):
+    compound = {
+        "entity_id": "amoxicillin",
+        "state_id": "alpha_ammonium",
+        "smiles": "CC",
+    }
+
+    with pytest.raises(LigandPreparationError):
+        prepare_ligand(
+            compound,
+            project_root=tmp_path,
+            work_dir=tmp_path / "work",
+            output_dir=tmp_path / "out",
+            meeko_command=["python", "-c", "pass"],
+        )
+
+    assert (tmp_path / "work" / "amoxicillin__alpha_ammonium.sdf").is_file()
+    assert not (tmp_path / "out" / "amoxicillin__alpha_ammonium.pdbqt").exists()

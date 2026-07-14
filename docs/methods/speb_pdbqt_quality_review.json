@@ -1,0 +1,53 @@
+{
+  "review_version": "2026-07-13-content-addressed",
+  "source_pdbqt_conversion": "docs/methods/speb_pdbqt_conversion.json",
+  "source_pdbqt_conversion_sha256": "db80c48a9b055f9f6be31b8532110e888feab92988b2b9074d7a1cf51f0d25df",
+  "source_pocket_definition": "docs/methods/speb_pocket_definition.json",
+  "source_pocket_definition_sha256": "bad5590c6f5cc993b11e0e2dd982c4063e9faed96f766b5ebd7ae46b5f994c39",
+  "decision_status": "pass",
+  "rules": [
+    "Parse Meeko --allow_bad_res residue omissions from the full conversion stderr.",
+    "Block if an omitted residue overlaps the tracked catalytic active-site residues.",
+    "Block if a tracked catalytic residue is absent from the reviewed receptor PDBQT.",
+    "Block if source-PDB, pocket-definition, or reviewed-PDBQT hashes disagree."
+  ],
+  "upstream_source": {
+    "path": "data/structures/6UKD.pdb",
+    "sha256": "27282ef4a2e6037ada91d3dc1092804f0abb4cd632186515469c7bfbc8b3da6b",
+    "hash_matches": true
+  },
+  "receptors": [
+    {
+      "pocket_id": "speb_6ukd_active_site",
+      "pdb_id": "6UKD",
+      "chain_id": "A",
+      "quality_status": "pass",
+      "source_prepared_pdb_path": "data/processed/receptors/speb_6ukd_active_site.pdb",
+      "source_prepared_pdb_sha256": "7d8ca2810de261079cf60c47a1787aac128b845615f57d1822884c05e5ed78b2",
+      "source_hash_matches_conversion": true,
+      "pocket_definition_sha256": "bad5590c6f5cc993b11e0e2dd982c4063e9faed96f766b5ebd7ae46b5f994c39",
+      "pocket_record_sha256": "3220a4223f80bb532f1a10a8ea7f3039c0398c3078eb8fed61ef477e706d9ac2",
+      "reviewed_pdbqt_path": "data/processed/pdbqt/speb_6ukd_active_site.pdbqt",
+      "reviewed_pdbqt_sha256": "9520792bc7660cc77faa108775195e2bd2b50e70e46fffe4d2aaed2c447e794a",
+      "pdbqt_hash_matches_conversion": true,
+      "ignored_residue_count": 3,
+      "ignored_residue_keys": [
+        "A:321",
+        "A:400",
+        "A:402"
+      ],
+      "ignored_active_site_residue_keys": [],
+      "pdbqt_active_site_residue_keys": [
+        "A:192:CYS",
+        "A:340:HIS"
+      ],
+      "missing_active_site_residue_keys": [],
+      "pdbqt_active_site_atom_counts": {
+        "A:192:CYS": 8,
+        "A:340:HIS": 12
+      },
+      "box_matches_conversion_manifest": true,
+      "review_notes": "Content-addressed receptor QC passed."
+    }
+  ]
+}

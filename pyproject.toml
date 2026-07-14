@@ -12,8 +12,8 @@ dev = [
   "pytest>=8.0.0"
 ]
 receptor-prep = [
-  "meeko>=0.7.1",
-  "rdkit>=2026.3.3",
+  "meeko==0.7.1",
+  "rdkit==2025.9.6",
   "gemmi>=0.7.5",
   "scipy>=1.18.0",
   "numpy>=2.5.0"
