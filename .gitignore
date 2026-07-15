@@ -41,3 +41,8 @@ results/tables/*
 
 # Stale pytest temp dir (OneDrive-locked; pytest no longer writes here)
 .pytest_tmp/
+
+# runtime campaign log (live-written)
+campaign.log
+# large pre-remediation data snapshot (kept on disk, not in history)
+results/docking_baseline_3b8c4dc/
