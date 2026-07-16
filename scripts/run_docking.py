@@ -23,7 +23,13 @@ from spycep_drug_discovery.docking import (
     DEFAULT_TIMEOUT_SECONDS,
     DockingError,
     build_run_manifest,
+    campaign_lock,
+    campaign_output_dir,
     dock_ligand,
+    is_continuable_scientific_disposition,
+    require_campaign_id,
+    require_suspend_calibration,
+    write_timeout_qc_report,
 )
 from spycep_drug_discovery.docking_analysis import (
     rank_docking_results,
@@ -59,11 +65,6 @@ RESULT = PROJECT_ROOT / "docs" / "methods" / (
 RANKING = PROJECT_ROOT / "results" / "tables" / (
     "docking_ranking_tight.csv" if TIGHT else "docking_ranking.csv"
 )
-POSE_DIR = PROJECT_ROOT / "results" / "docking" / (
-    "library_tight_stage2" if TIGHT else "library_stage2"
-)
-
-
 def _atomic_json(path: Path, value: dict) -> None:
     temporary = path.with_suffix(path.suffix + ".tmp")
     temporary.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
@@ -106,7 +107,7 @@ def _load_and_require_gates():
     return catalog, attempts, pockets, species_hash, attempt_hash
 
 
-def main() -> None:
+def _run_campaign(campaign_id: str, pose_dir: Path) -> None:
     (
         catalog,
         attempt_manifest,
@@ -174,7 +175,7 @@ def main() -> None:
                 state_id=attempt["state_id"],
                 ligand_pdbqt=PROJECT_ROOT / ligand["pdbqt_path"],
                 project_root=PROJECT_ROOT,
-                output_dir=POSE_DIR,
+                output_dir=pose_dir,
                 workflow=WORKFLOW,
                 species_catalog_sha256=species_hash,
                 attempt_manifest_sha256=attempt_hash,
@@ -186,9 +187,10 @@ def main() -> None:
                 scoring=DEFAULT_SCORING,
                 resume=RESUME,
                 timeout_seconds=DEFAULT_TIMEOUT_SECONDS,
+                campaign_id=campaign_id,
             )
         except DockingError as exc:
-            if exc.run_record is None:
+            if not is_continuable_scientific_disposition(exc.run_record):
                 raise
             record = exc.run_record
             run_records.append(record)
@@ -230,6 +232,7 @@ def main() -> None:
 
     ranked = rank_docking_results(valid_results)
     write_ranking_csv(ranked, RANKING)
+    timeout_qc_path, _ = write_timeout_qc_report(pose_dir, run_records)
     manifest = build_run_manifest(
         workflow=WORKFLOW,
         run_records=run_records,
@@ -253,8 +256,19 @@ def main() -> None:
     )
     manifest["ranking"] = ranked
     manifest["pose_interactions"] = interactions
+    manifest["timeout_qc_artifact_path"] = timeout_qc_path.relative_to(
+        PROJECT_ROOT
+    ).as_posix()
     _atomic_json(RESULT, manifest)
     print(f"Wrote {RESULT.relative_to(PROJECT_ROOT)}")
+
+
+def main() -> None:
+    campaign_id = require_campaign_id()
+    require_suspend_calibration(PROJECT_ROOT)
+    pose_dir = campaign_output_dir(PROJECT_ROOT, campaign_id, WORKFLOW)
+    with campaign_lock(PROJECT_ROOT, campaign_id):
+        _run_campaign(campaign_id, pose_dir)
 
 
 if __name__ == "__main__":

@@ -1,8 +1,6 @@
 import json
-import subprocess
 import sys
 from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
 
@@ -13,6 +11,9 @@ from spycep_drug_discovery.docking import (
     DEFAULT_SCORING,
     DEFAULT_SEED,
     DockingError,
+    SupervisedResult,
+    WAIT_OBJECT_0,
+    WAIT_TIMEOUT,
     build_vina_command,
     dock_ligand,
     parse_pose_pdbqt_modes,
@@ -29,6 +30,16 @@ MODEL 2
 REMARK VINA RESULT:      -5.100      1.234      2.345
 ENDMDL
 """
+
+
+@pytest.fixture(autouse=True)
+def _guard_against_unmocked_native_supervisor(monkeypatch):
+    def forbidden(*_args, **_kwargs):
+        raise AssertionError("unit test reached the real CreateProcessW supervisor")
+
+    monkeypatch.setattr(
+        "spycep_drug_discovery.docking._run_vina_supervised", forbidden
+    )
 
 
 def test_parse_pose_pdbqt_modes_recovers_affinities():
@@ -115,15 +126,25 @@ def _docking_inputs(tmp_path):
     }
 
 
-def _successful_vina(command, **_kwargs):
+def _successful_vina(command, _timeout_seconds, **_kwargs):
     out_path = Path(command[command.index("--out") + 1])
     out_path.write_text(POSE_PDBQT, encoding="utf-8")
-    return SimpleNamespace(returncode=0, stdout=VINA_STDOUT, stderr="")
+    return SupervisedResult(
+        disposition_basis="wait_signaled",
+        wait_result=WAIT_OBJECT_0,
+        termination_action="none",
+        exit_code=0,
+        unbiased_seconds=1.0,
+        wall_seconds=1.0,
+        stdout=VINA_STDOUT,
+    )
 
 
 def _dock(tmp_path, monkeypatch, **overrides):
     ligand, receptor = _docking_inputs(tmp_path)
-    monkeypatch.setattr("spycep_drug_discovery.docking.subprocess.run", _successful_vina)
+    monkeypatch.setattr(
+        "spycep_drug_discovery.docking._run_vina_supervised", _successful_vina
+    )
     kwargs = {
         "vina_executable": sys.executable,
         "receptor": receptor,
@@ -136,6 +157,7 @@ def _dock(tmp_path, monkeypatch, **overrides):
         "species_catalog_sha256": "a" * 64,
         "attempt_manifest_sha256": "b" * 64,
         "software_versions": {"rdkit": "test", "meeko": "test", "vina": "test"},
+        "campaign_id": "test-campaign",
     }
     kwargs.update(overrides)
     return dock_ligand(**kwargs), ligand, receptor, kwargs
@@ -167,7 +189,9 @@ def test_resume_requires_exact_fingerprint_and_preserves_full_command(tmp_path, 
     def must_not_run(*_args, **_kwargs):
         raise AssertionError("exact resume must not invoke Vina")
 
-    monkeypatch.setattr("spycep_drug_discovery.docking.subprocess.run", must_not_run)
+    monkeypatch.setattr(
+        "spycep_drug_discovery.docking._run_vina_supervised", must_not_run
+    )
     resumed = dock_ligand(**kwargs, resume=True)
 
     assert resumed["resumed"] is True
@@ -189,10 +213,17 @@ def test_resume_rejects_output_hash_tampering(tmp_path, monkeypatch):
 def test_no_fit_marker_has_same_fingerprint_budget_and_sidecar_guards(tmp_path, monkeypatch):
     ligand, receptor = _docking_inputs(tmp_path)
 
-    def timeout(command, **_kwargs):
-        raise subprocess.TimeoutExpired(command, timeout=7)
+    def timeout(_command, _timeout_seconds, **_kwargs):
+        return SupervisedResult(
+            disposition_basis="deadline_timeout",
+            wait_result=WAIT_TIMEOUT,
+            termination_action="TerminateJobObject",
+            exit_code=None,
+            unbiased_seconds=7.0,
+            wall_seconds=7.0,
+        )
 
-    monkeypatch.setattr("spycep_drug_discovery.docking.subprocess.run", timeout)
+    monkeypatch.setattr("spycep_drug_discovery.docking._run_vina_supervised", timeout)
     kwargs = {
         "vina_executable": sys.executable,
         "receptor": receptor,
@@ -205,6 +236,7 @@ def test_no_fit_marker_has_same_fingerprint_budget_and_sidecar_guards(tmp_path, 
         "species_catalog_sha256": "a" * 64,
         "attempt_manifest_sha256": "b" * 64,
         "timeout_seconds": 7,
+        "campaign_id": "test-campaign",
     }
     with pytest.raises(DockingError) as caught:
         dock_ligand(**kwargs)
@@ -224,7 +256,7 @@ def test_no_fit_marker_has_same_fingerprint_budget_and_sidecar_guards(tmp_path, 
     assert exact.value.run_record["fingerprint"] == record["fingerprint"]
 
 
-def test_fresh_run_removes_pose_marker_sidecar_and_temp_as_one_attempt(tmp_path, monkeypatch):
+def test_fresh_run_preserves_preexisting_paths_and_writes_immutable_attempt(tmp_path, monkeypatch):
     ligand, receptor = _docking_inputs(tmp_path)
     output = tmp_path / "poses"
     output.mkdir()
@@ -233,7 +265,9 @@ def test_fresh_run_removes_pose_marker_sidecar_and_temp_as_one_attempt(tmp_path,
     for suffix in suffixes:
         (output / f"{base}{suffix}").write_text("stale", encoding="utf-8")
 
-    monkeypatch.setattr("spycep_drug_discovery.docking.subprocess.run", _successful_vina)
+    monkeypatch.setattr(
+        "spycep_drug_discovery.docking._run_vina_supervised", _successful_vina
+    )
     record = dock_ligand(
         vina_executable=sys.executable,
         receptor=receptor,
@@ -245,11 +279,10 @@ def test_fresh_run_removes_pose_marker_sidecar_and_temp_as_one_attempt(tmp_path,
         workflow="wide",
         species_catalog_sha256="a" * 64,
         attempt_manifest_sha256="b" * 64,
+        campaign_id="test-campaign",
     )
 
     assert record["status"] == "valid_fit"
-    assert not (output / f"{base}.no_fit").exists()
-    assert not any(
-        (output / f"{base}{suffix}").exists()
-        for suffix in (".pdbqt.tmp", ".no_fit.tmp", ".run.json.tmp")
-    )
+    assert all((output / f"{base}{suffix}").read_text(encoding="utf-8") == "stale" for suffix in suffixes)
+    assert record["attempt_instance_id"] in record["out_path"]
+    assert (output / f"wide__{base}.selection.json").is_file()

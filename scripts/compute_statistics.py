@@ -22,6 +22,10 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
+from spycep_drug_discovery.docking import (
+    validate_campaign_manifest_set,
+    validate_manifest_timeout_qc,
+)
 from spycep_drug_discovery.statistics_analysis import (
     bootstrap_mean_difference,
     mann_whitney,
@@ -40,15 +44,22 @@ def _fits(ranking: list[dict]) -> list[dict]:
     return [row for row in ranking if row[AFFINITY] < 0]
 
 
+def _manifest(path: Path) -> dict:
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    validate_manifest_timeout_qc(manifest)
+    return manifest
+
+
 def _comparison(result_path: Path) -> dict:
-    ranking = _fits(json.loads(result_path.read_text(encoding="utf-8"))["ranking"])
+    manifest = _manifest(result_path)
+    ranking = _fits(manifest["ranking"])
     custom = [r for r in ranking if r["set"] == "custom_anti_virulence"]
     fda = [r for r in ranking if r["set"] == "fda_comparator"]
 
     out: dict = {
         "non_fits_excluded": [
             r["ligand_id"]
-            for r in json.loads(result_path.read_text(encoding="utf-8"))["ranking"]
+            for r in manifest["ranking"]
             if r[AFFINITY] >= 0
         ]
     }
@@ -73,7 +84,7 @@ def _triad_engagement(result_path: Path) -> dict:
     figure is a pose-row count (ligand x receptor, out of 146) presented as a per-ligand
     count out of 73; no per-ligand reading of the manifests reproduces it.
     """
-    manifest = json.loads(result_path.read_text(encoding="utf-8"))
+    manifest = _manifest(result_path)
     by_ligand: dict[str, list[dict]] = {}
     for row in manifest["pose_interactions"]:
         by_ligand.setdefault(row["ligand_id"], []).append(row)
@@ -96,7 +107,10 @@ def _triad_engagement(result_path: Path) -> dict:
 
 
 def main() -> None:
-    speb = json.loads((METHODS / "speb_positive_control_result.json").read_text(encoding="utf-8"))
+    wide = _manifest(METHODS / "docking_result.json")
+    tight = _manifest(METHODS / "docking_result_tight.json")
+    speb = _manifest(METHODS / "speb_positive_control_result.json")
+    validate_campaign_manifest_set((wide, tight, speb))
     decoys = [r for r in speb["results"] if r["role"] == "decoy"]
     positive = next(r for r in speb["results"] if r["role"] == "positive_known_inhibitor")
 

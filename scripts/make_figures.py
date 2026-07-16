@@ -30,6 +30,11 @@ import numpy as np
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
+from spycep_drug_discovery.docking import (
+    validate_campaign_manifest_set,
+    validate_manifest_timeout_qc,
+)
+
 METHODS = PROJECT_ROOT / "docs" / "methods"
 FIGDIR = PROJECT_ROOT / "docs" / "manuscript" / "figures"
 
@@ -57,8 +62,14 @@ def _style(ax):
     ax.yaxis.label.set_color(INK2)
 
 
+def _manifest(name: str) -> dict:
+    manifest = json.loads((METHODS / name).read_text(encoding="utf-8"))
+    validate_manifest_timeout_qc(manifest)
+    return manifest
+
+
 def _ranking(name: str) -> list[dict]:
-    rows = json.loads((METHODS / name).read_text(encoding="utf-8"))["ranking"]
+    rows = _manifest(name)["ranking"]
     return [r for r in rows if r[AFFINITY] < 0]  # drop non-fits (positive = clash)
 
 
@@ -102,7 +113,7 @@ def figure_custom_vs_fda():
 
 
 def figure_speb_positive_control():
-    speb = json.loads((METHODS / "speb_positive_control_result.json").read_text(encoding="utf-8"))
+    speb = _manifest("speb_positive_control_result.json")
     rows = [r for r in speb["results"] if r["role"] in ("positive_known_inhibitor", "decoy")]
 
     fig, axes = plt.subplots(1, 2, figsize=(10.5, 5.4), facecolor=SURFACE)
@@ -204,6 +215,13 @@ def figure_triad_engagement():
 
 
 def main() -> None:
+    validate_campaign_manifest_set(
+        (
+            _manifest("docking_result.json"),
+            _manifest("docking_result_tight.json"),
+            _manifest("speb_positive_control_result.json"),
+        )
+    )
     FIGDIR.mkdir(parents=True, exist_ok=True)
     figure_custom_vs_fda()
     figure_speb_positive_control()

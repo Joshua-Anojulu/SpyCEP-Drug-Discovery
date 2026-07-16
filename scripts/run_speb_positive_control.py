@@ -23,7 +23,13 @@ from spycep_drug_discovery.docking import (
     DEFAULT_TIMEOUT_SECONDS,
     DockingError,
     build_run_manifest,
+    campaign_lock,
+    campaign_output_dir,
     dock_ligand,
+    is_continuable_scientific_disposition,
+    require_campaign_id,
+    require_suspend_calibration,
+    write_timeout_qc_report,
 )
 from spycep_drug_discovery.environment import runtime_versions
 from spycep_drug_discovery.interaction_analysis import analyze_pose_interactions
@@ -46,16 +52,13 @@ CONVERSION = PROJECT_ROOT / "docs" / "methods" / "speb_pdbqt_conversion.json"
 QC = PROJECT_ROOT / "docs" / "methods" / "speb_pdbqt_quality_review.json"
 POCKETS = PROJECT_ROOT / "docs" / "methods" / "speb_pocket_definition.json"
 RESULT = PROJECT_ROOT / "docs" / "methods" / "speb_positive_control_result.json"
-POSE_DIR = PROJECT_ROOT / "results" / "docking" / "speb_positive_control_stage2"
-
-
 def _atomic_json(path: Path, value: dict) -> None:
     temporary = path.with_suffix(path.suffix + ".tmp")
     temporary.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
     os.replace(temporary, path)
 
 
-def main() -> None:
+def _run_campaign(campaign_id: str, pose_dir: Path) -> None:
     catalog = load_species_catalog(SPECIES)
     attempt_manifest = json.loads(ATTEMPTS.read_text(encoding="utf-8"))
     validate_attempt_manifest(attempt_manifest, catalog)
@@ -137,7 +140,7 @@ def main() -> None:
                 state_id=attempt["state_id"],
                 ligand_pdbqt=PROJECT_ROOT / ligand["pdbqt_path"],
                 project_root=PROJECT_ROOT,
-                output_dir=POSE_DIR,
+                output_dir=pose_dir,
                 workflow="speb",
                 species_catalog_sha256=species_hash,
                 attempt_manifest_sha256=attempt_hash,
@@ -148,9 +151,10 @@ def main() -> None:
                 cpu=DEFAULT_CPU,
                 scoring=DEFAULT_SCORING,
                 timeout_seconds=DEFAULT_TIMEOUT_SECONDS,
+                campaign_id=campaign_id,
             )
         except DockingError as exc:
-            if exc.run_record is None:
+            if not is_continuable_scientific_disposition(exc.run_record):
                 raise
             records.append(exc.run_record)
             continue
@@ -178,6 +182,7 @@ def main() -> None:
             }
         )
 
+    timeout_qc_path, _ = write_timeout_qc_report(pose_dir, records)
     manifest = build_run_manifest(
         workflow="speb",
         run_records=records,
@@ -197,8 +202,19 @@ def main() -> None:
         },
     )
     manifest["results"] = results
+    manifest["timeout_qc_artifact_path"] = timeout_qc_path.relative_to(
+        PROJECT_ROOT
+    ).as_posix()
     _atomic_json(RESULT, manifest)
     print(f"Wrote {RESULT.relative_to(PROJECT_ROOT)}")
+
+
+def main() -> None:
+    campaign_id = require_campaign_id()
+    require_suspend_calibration(PROJECT_ROOT)
+    pose_dir = campaign_output_dir(PROJECT_ROOT, campaign_id, "speb")
+    with campaign_lock(PROJECT_ROOT, campaign_id):
+        _run_campaign(campaign_id, pose_dir)
 
 
 if __name__ == "__main__":

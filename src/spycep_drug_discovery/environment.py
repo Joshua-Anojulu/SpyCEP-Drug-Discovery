@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import importlib.metadata
+import platform
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -53,4 +55,31 @@ def runtime_versions(vina_executable: Path) -> dict[str, Any]:
     if not version:
         raise EnvironmentPinError("Vina returned an empty version string.")
     versions["vina"] = version
+    from spycep_drug_discovery.docking import (
+        CLOCK_SOURCE,
+        DEFAULT_TIMEOUT_MS,
+        RUN_SCHEMA_VERSION,
+        TIMEOUT_BASIS,
+        WAIT_MECHANISM,
+        supervisor_source_sha256,
+    )
+
+    versions.update(
+        {
+            "cpython_version": platform.python_version(),
+            "cpython_build": list(platform.python_build()),
+            "cpython_compiler": platform.python_compiler(),
+            "windows_version": platform.version(),
+            "windows_release": platform.release(),
+            "windows_build": (
+                sys.getwindowsversion().build if sys.platform == "win32" else None
+            ),
+            "supervisor_source_sha256": supervisor_source_sha256(),
+            "timing_api": CLOCK_SOURCE,
+            "wait_mechanism": WAIT_MECHANISM,
+            "timeout_ms": DEFAULT_TIMEOUT_MS,
+            "timeout_basis": TIMEOUT_BASIS,
+            "run_schema_version": RUN_SCHEMA_VERSION,
+        }
+    )
     return versions

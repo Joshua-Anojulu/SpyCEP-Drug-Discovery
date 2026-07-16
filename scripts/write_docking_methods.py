@@ -9,10 +9,15 @@ Run:
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from statistics import mean
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
+
+from spycep_drug_discovery.docking import validate_campaign_manifest_set
+
 METHODS = PROJECT_ROOT / "docs" / "methods"
 WIDE = METHODS / "docking_result.json"
 TIGHT = METHODS / "docking_result_tight.json"
@@ -60,6 +65,9 @@ def main() -> None:
     stats = json.loads(STATS.read_text(encoding="utf-8"))
     speb = json.loads(SPEB.read_text(encoding="utf-8"))
     boron = json.loads(BORON.read_text(encoding="utf-8")) if BORON.exists() else None
+    validate_campaign_manifest_set(
+        (wide, tight, speb, *((boron,) if boron else ()))
+    )
 
     ws, ts = _set_stats(wide), _set_stats(tight)
     charged = sum(1 for r in wide["ligand_preparation"] if r["formal_charge"] != 0)
