@@ -250,3 +250,25 @@ Accepting all 6 + the note; verified #3/#4/#6 + the triad headline against the c
 - **Note** §H recomputation list gains best-receptor + per-receptor triad ranges (67/53/31), their figures, and claim-registry entries.
 
 **Rejecting:** nothing this round.
+
+---
+
+# Act 3 — Build (Codex types, Claude verifies)
+
+## Round 1 — Codex build (`gpt-5.6-sol`, xhigh, `--yolo`, user-authorized)
+_Session fresh; SPEC=PLAN-timeout-fix.md. Build ran while the old-code campaign was live; contract forbade touching results/, running campaign scripts, or git writes._
+
+**Codex report:** implemented the frozen fix; deviations: none. Files changed: `src/spycep_drug_discovery/docking.py` (Win32 supervisor, schema v2, validator, QC, quarantine, selection manifest, calibration, campaign isolation), `environment.py` (provenance), the three entry points (`run_docking.py`/`run_speb_positive_control.py`/`dock_boron_surrogates.py` — campaign-id root, lock/calibration gates, QC artifact, infra abort), `compute_statistics.py`/`make_figures.py`/`write_docking_methods.py` (analysis QC + campaign-consistency gate), `tests/test_docking.py` (ported to the seam), `tests/test_docking_timeout.py` (new), `tests/test_environment_and_workflow_schema.py` (v2), `docs/adr/ADR-0001-timeout-unbiased-wall-basis.md` (new), `PROJECT_CONTEXT.md` (appended amendment).
+
+### Claude's verdict — VERIFIED, no fix round needed
+Verified independently (not trusting Codex's claims):
+- **Scope:** `git status` shows only expected files; **no `results/` or `docs/methods/*.json` touched — live campaign untouched.**
+- **Proof (ran myself):** full suite `pytest tests -q` = **179 passed, 0 failed**; `test_docking_timeout.py` = **22 passed, 0 skipped** (so the real Win32 smoke test executed). Test names map 1:1 to the argued edge cases (timing-ambiguous never-accepted parametrized on exit code; suspend-recompute on `deadline_timeout` = the R9 fix; bidirectional canonical mapping; STILL_ACTIVE rejection; infra-abort; calibration abort-gate).
+- **Core impl (read the diff):** correct Win32 ABI (`QueryUnbiasedInterruptTime`→`POINTER(c_ulonglong)`, `ResumeThread`→`DWORD` with the `==1` check, `GetExitCodeProcess`, `DeleteProcThreadAttributeList` cleanup on every path); `unbiased_start`/`wall_start` captured **after `CreateProcessW` but before `ResumeThread`** (correct — child is `CREATE_SUSPENDED`); kernel-wait disposition; `WAIT_FAILED`/unexpected → infra; `BaseException`→infra; full `finally` cleanup.
+- **Validator:** `suspend_detected` recomputed for **all** scientific records (both `deadline_timeout` and `wait_signaled` — R9 scope), `timing_ambiguous` recompute gated to `wait_signaled`, `deadline_timeout` barred from `timing_ambiguous`, numeric-domain validity gate, infra always blocks, bidirectional canonical mapping enforced.
+- **Entry points:** infra-abort via `is_continuable_scientific_disposition` (infra not continuable → re-raise/abort; scientific timeout/no_fit continue).
+- **Preregistration integrity:** ADR-0001 states "predicts no rerun outcome," cites only verified evidence (labels the ~15-CPU-min as not-evidence), prospective framing, all rejected alternatives recorded; `PROJECT_CONTEXT.md` amendment **appended** (original §H/§17 preserved), "no outcome predicted."
+
+**Deferred (human-gated, NOT built — correctly):** plan §H operational steps — stop/archive the live old-code campaign, run the pre-campaign calibration abort-gate, launch the neutral schema-v2 rerun, recompute headlines. These come after commit + sign-off.
+
+Isolation checkpoint before build: `d740226`. Awaiting human diff sign-off before commit (Claude commits, never Codex).
