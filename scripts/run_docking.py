@@ -22,6 +22,7 @@ from spycep_drug_discovery.docking import (
     DEFAULT_SEED,
     DEFAULT_TIMEOUT_SECONDS,
     DockingError,
+    InfrastructureError,
     build_run_manifest,
     campaign_lock,
     campaign_output_dir,
@@ -265,7 +266,11 @@ def _run_campaign(campaign_id: str, pose_dir: Path) -> None:
 
 def main() -> None:
     campaign_id = require_campaign_id()
-    require_suspend_calibration(PROJECT_ROOT)
+    calibration = require_suspend_calibration(PROJECT_ROOT)
+    if calibration.get("campaign_id") != campaign_id:
+        raise InfrastructureError(
+            "Suspend calibration campaign_id does not match SPYCEP_CAMPAIGN_ID."
+        )
     pose_dir = campaign_output_dir(PROJECT_ROOT, campaign_id, WORKFLOW)
     with campaign_lock(PROJECT_ROOT, campaign_id):
         _run_campaign(campaign_id, pose_dir)

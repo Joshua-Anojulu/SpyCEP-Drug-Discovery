@@ -15,6 +15,13 @@ LOCKDIR=.campaign.lock
 : "${SPYCEP_SUSPEND_CALIBRATION_PATH:?Set the pre-campaign calibration artifact path (§H9)}"
 export SPYCEP_CAMPAIGN_ID SPYCEP_SUSPEND_CALIBRATION_PATH
 
+# Early diagnostic only.  Every Python entry point repeats this comparison against
+# the record returned by the real validator, so direct invocation remains bound too.
+if ! "$PY" -c 'import sys; from pathlib import Path; sys.path.insert(0, "src"); from spycep_drug_discovery.docking import require_campaign_id, require_suspend_calibration; campaign_id = require_campaign_id(); record = require_suspend_calibration(Path.cwd()); record.get("campaign_id") == campaign_id or sys.exit("Suspend calibration campaign_id does not match SPYCEP_CAMPAIGN_ID.")'; then
+    echo "REFUSING TO START: suspend calibration validation or campaign binding failed."
+    exit 1
+fi
+
 CAMPAIGN_ROOT="results/docking/campaign_${SPYCEP_CAMPAIGN_ID}"
 
 # Campaigns are immutable and never resumed. Python enforces this per-attempt

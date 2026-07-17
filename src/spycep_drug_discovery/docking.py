@@ -159,6 +159,8 @@ class SupervisedResult:
     stdout_temp_path: str | None = None
     stderr_temp_path: str | None = None
     cleanup_outcome: Mapping[str, Any] | None = None
+    job_cpu_seconds: float | None = None
+    load_window_unbiased_seconds: float | None = None
 
 
 def supervisor_source_sha256() -> str:
@@ -287,10 +289,25 @@ class _Win32Bindings:
                 ("PeakJobMemoryUsed", SIZE_T),
             ]
 
+        class JOBOBJECT_BASIC_ACCOUNTING_INFORMATION(ctypes.Structure):
+            _fields_ = [
+                ("TotalUserTime", ctypes.c_longlong),
+                ("TotalKernelTime", ctypes.c_longlong),
+                ("ThisPeriodTotalUserTime", ctypes.c_longlong),
+                ("ThisPeriodTotalKernelTime", ctypes.c_longlong),
+                ("TotalPageFaultCount", wintypes.DWORD),
+                ("TotalProcesses", wintypes.DWORD),
+                ("ActiveProcesses", wintypes.DWORD),
+                ("TotalTerminatedProcesses", wintypes.DWORD),
+            ]
+
         self.SECURITY_ATTRIBUTES = SECURITY_ATTRIBUTES
         self.STARTUPINFOEXW = STARTUPINFOEXW
         self.PROCESS_INFORMATION = PROCESS_INFORMATION
         self.JOBOBJECT_EXTENDED_LIMIT_INFORMATION = JOBOBJECT_EXTENDED_LIMIT_INFORMATION
+        self.JOBOBJECT_BASIC_ACCOUNTING_INFORMATION = (
+            JOBOBJECT_BASIC_ACCOUNTING_INFORMATION
+        )
 
         self.QueryUnbiasedInterruptTime = self.kernel32.QueryUnbiasedInterruptTime
         self.QueryUnbiasedInterruptTime.argtypes = [ctypes.POINTER(ctypes.c_ulonglong)]
@@ -308,6 +325,16 @@ class _Win32Bindings:
             wintypes.DWORD,
         ]
         self.SetInformationJobObject.restype = wintypes.BOOL
+
+        self.QueryInformationJobObject = self.kernel32.QueryInformationJobObject
+        self.QueryInformationJobObject.argtypes = [
+            wintypes.HANDLE,
+            ctypes.c_int,
+            wintypes.LPVOID,
+            wintypes.DWORD,
+            ctypes.POINTER(wintypes.DWORD),
+        ]
+        self.QueryInformationJobObject.restype = wintypes.BOOL
 
         self.InitializeProcThreadAttributeList = (
             self.kernel32.InitializeProcThreadAttributeList
@@ -393,6 +420,7 @@ def _run_vina_supervised(
     *,
     cwd: Path,
     temp_dir: Path,
+    collect_job_accounting: bool = False,
 ) -> SupervisedResult:
     """Launch one child atomically in a Job and arm one sleep-excluding wait."""
     if not math.isfinite(float(timeout_seconds)) or timeout_seconds <= 0:
@@ -421,6 +449,7 @@ def _run_vina_supervised(
     child_created = False
     job_terminated = False
     unbiased_start: int | None = None
+    load_window_unbiased_start: int | None = None
     wall_start: float | None = None
     failure: _SupervisorInfrastructureError | None = None
     disposition_basis: str | None = None
@@ -431,6 +460,8 @@ def _run_vina_supervised(
     stderr = ""
     wall_seconds: float | None = None
     unbiased_seconds: float | None = None
+    job_cpu_seconds: float | None = None
+    load_window_unbiased_seconds: float | None = None
     cleanup: dict[str, Any] = {
         "job_terminated": False,
         "child_reaped": False,
@@ -584,6 +615,11 @@ def _run_vina_supervised(
         unbiased_start = _query_unbiased_interrupt_time(bindings)
         wall_start = time.perf_counter()
         ctypes.set_last_error(0)
+        if collect_job_accounting:
+            # The accounting numerator is cumulative over the entire Job.  Take the
+            # enclosing denominator start before the child can execute so numerator
+            # time can never precede the denominator.
+            load_window_unbiased_start = _query_unbiased_interrupt_time(bindings)
         previous_suspend_count = int(bindings.ResumeThread(thread_handle))
         if previous_suspend_count != 1:
             fail(
@@ -662,6 +698,43 @@ def _run_vina_supervised(
                     failure_stage="cleanup.WaitForSingleObject",
                     win32_error=last_error() if reap_result == WAIT_FAILED else None,
                 )
+        if (
+            collect_job_accounting
+            and job_handle
+            and load_window_unbiased_start is not None
+        ):
+            accounting = bindings.JOBOBJECT_BASIC_ACCOUNTING_INFORMATION()
+            returned_length = wintypes.DWORD()
+            ctypes.set_last_error(0)
+            accounting_ok = bool(
+                bindings.QueryInformationJobObject(
+                    job_handle,
+                    1,
+                    ctypes.byref(accounting),
+                    ctypes.sizeof(accounting),
+                    ctypes.byref(returned_length),
+                )
+            )
+            if accounting_ok:
+                job_cpu_seconds = (
+                    int(accounting.TotalUserTime) + int(accounting.TotalKernelTime)
+                ) / 10_000_000.0
+            elif failure is None:
+                failure = _SupervisorInfrastructureError(
+                    "QueryInformationJobObject failed for Job accounting.",
+                    failure_stage="QueryInformationJobObject",
+                    win32_error=last_error(),
+                )
+            try:
+                # This endpoint follows termination, reap, and the accounting query,
+                # while the Job handle is still live.  Thus numerator ⊆ denominator.
+                load_window_unbiased_end = _query_unbiased_interrupt_time(bindings)
+                load_window_unbiased_seconds = (
+                    load_window_unbiased_end - load_window_unbiased_start
+                ) / 10_000_000.0
+            except _SupervisorInfrastructureError as exc:
+                if failure is None:
+                    failure = exc
         if attribute_initialized and attribute_list is not None:
             bindings.DeleteProcThreadAttributeList(attribute_list)
             cleanup["attribute_list_deleted"] = True
@@ -728,6 +801,8 @@ def _run_vina_supervised(
         stdout_temp_path=str(log_paths[0]) if log_paths else None,
         stderr_temp_path=str(log_paths[1]) if len(log_paths) > 1 else None,
         cleanup_outcome=cleanup,
+        job_cpu_seconds=job_cpu_seconds,
+        load_window_unbiased_seconds=load_window_unbiased_seconds,
     )
 
 

@@ -637,3 +637,49 @@ catches only sustained over-utilization. Revision 1 was confident and wrong; rev
 where it stops.
 
 **Awaiting Josh's sign-off. No code has been written. Act 3 (build) begins only after he signs off.**
+
+---
+
+# Act 3 — Build (Codex types, Claude verifies)
+
+## Round 1 — Codex build (`gpt-5.6-sol`, `--yolo`, user-authorized; 20m 11s, 190,859 tokens)
+_Isolation checkpoint `3421ed8`, clean tree. SPEC=PLAN-calibration.md rev 8. Pre-build proof baseline: **179 passed**._
+
+**Codex report:** implemented rev 8; **deviations: none**. Files: `scripts/calibrate_suspend.py` (new, 1071 lines),
+`tests/test_calibrate_suspend.py` (new, 478), `docs/adr/ADR-0002-suspend-calibration-protocol.md` (new, 67),
+`docking.py` (+75 additive), `tests/test_docking_timeout.py` (+75), the three entry points (+7 each),
+`run_campaign.sh` (+7).
+
+### Claude's verdict — VERIFIED, no fix round needed
+
+Verified independently, not trusting Codex's claims:
+
+- **Scope:** exactly the nine expected files. Diff is **+175/−3** in tracked files.
+- **Hard constraints all hold.** `validate_suspend_calibration` / the v1 schema / `SUSPEND_THRESHOLD` /
+  `CALIBRATION_DURATION_SECONDS`: **zero diff lines touch them** — Josh's Act-1 constraint survived the build.
+  **Nothing written under `results/`**; the ADR-evidence sidecar (`29287.070618800004`) is byte-intact with an
+  unchanged mtime. Frozen constants match the approved table exactly — none tuned. `HEAD` is still Claude's commit:
+  **no git operations by Codex**. Frozen plans untouched.
+- **Proof (run by Claude, not quoted):** `pytest tests -q` → **225 collected, exit code 0**, baseline 179 → **+46**
+  (44 new calibration tests; `test_docking_timeout.py` 22 → 24). **Zero skips** — the timeout-fix standard.
+- **The three danger points, each verified in the source:**
+  1. §8 floor/ceiling use **different denominators**: `job_cpu / load_window_unbiased_seconds ≥ 0.90` and
+     `job_cpu / 600.0 ≤ 1.10`. The fail-open band is gone.
+  2. §2 `load_window_unbiased_start` is taken at `docking.py:622`, **before** `ResumeThread` at `:623`.
+  3. §7 gates the **non-precise** clock; read order is literally `n1, p1, wall, p2, n2`.
+- **Excursion math matches the plan line for line:** `upper = Δw − (n₁ⱼ − n₂ᵢ) + measured_lag`;
+  `lower = Δw − (n₂ⱼ − n₁ᵢ) − measured_lag` (Codex R5 #2's exact formula); cross-check on **midpoints per identical
+  (i,j)**; well-formedness checked; three-way classification ordered correctly; the gate reads the **real module
+  constant** `MAX_AWAKE_CALIBRATION_DRIFT_SECONDS` rather than a retyped `0.5`; overdue deadlines never replayed.
+- **Real Windows integration test exists and runs:** `test_job_accounting_prestart_cpu_cannot_escape_denominator_and_
+  end_follows_reap` (0.21 s) wraps the **real** `_Win32Bindings` in a tracing proxy, spawns a real child, and asserts
+  `deadline_timeout`, `job_cpu_seconds > 0`, reap/terminate/cleanup, and the **call ordering**. Claude initially
+  suspected this test was absent (the calibration suite's slowest case is 0.02 s) — it is in `test_docking_timeout.py`.
+  Codex's "0.2-second native workload" claim was accurate; the suspicion was Claude's, and checking dissolved it.
+- **ADR-0002** carries the withdrawn-guarantee and forgeability/freshness language verbatim, and makes **no outcome
+  prediction** — matching the ADR-0001 standard.
+- **Seam reuse, not reimplementation:** imports `_run_vina_supervised`, `build_vina_command`, `campaign_lock`,
+  `require_campaign_id`, and calls the **real** `validate_suspend_calibration` at line 760 for the §12 self-check.
+
+**Deferred, correctly not built:** the live 600 s calibration run and the v2 campaign launch. Those are operator steps
+after commit + sign-off.

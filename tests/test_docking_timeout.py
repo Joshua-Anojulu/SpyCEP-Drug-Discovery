@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 
+import spycep_drug_discovery.docking as docking_module
+
 from spycep_drug_discovery.docking import (
     CLOCK_SOURCE,
     DEFAULT_TIMEOUT_MS,
@@ -460,4 +462,77 @@ def test_win32_supervisor_smoke_success_and_error_cleanup(tmp_path):
     assert {"job", "stdin", "stdout", "stderr"}.issubset(
         caught.value.cleanup_outcome["handles_closed"]
     )
+    assert not list(tmp_path.glob("vina-supervisor-*.log"))
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Win32 Job accounting test")
+def test_job_accounting_is_default_disabled_for_ordinary_calls(tmp_path):
+    result = _run_vina_supervised(
+        [sys.executable, "-c", "pass"],
+        10.0,
+        cwd=tmp_path,
+        temp_dir=tmp_path,
+    )
+    assert result.disposition_basis == "wait_signaled"
+    assert result.job_cpu_seconds is None
+    assert result.load_window_unbiased_seconds is None
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Win32 Job accounting test")
+def test_job_accounting_prestart_cpu_cannot_escape_denominator_and_end_follows_reap(
+    tmp_path, monkeypatch
+):
+    real_bindings_type = docking_module._Win32Bindings
+    events = []
+
+    class TracingBindings:
+        def __init__(self):
+            self._real = real_bindings_type()
+
+        def __getattr__(self, name):
+            return getattr(self._real, name)
+
+        def QueryUnbiasedInterruptTime(self, *args):
+            events.append("unbiased")
+            return self._real.QueryUnbiasedInterruptTime(*args)
+
+        def ResumeThread(self, *args):
+            events.append("resume")
+            return self._real.ResumeThread(*args)
+
+        def WaitForSingleObject(self, handle, timeout_ms):
+            events.append("reap" if timeout_ms == 5000 else "armed_wait")
+            return self._real.WaitForSingleObject(handle, timeout_ms)
+
+        def TerminateJobObject(self, *args):
+            events.append("terminate")
+            return self._real.TerminateJobObject(*args)
+
+        def QueryInformationJobObject(self, *args):
+            events.append("accounting_query")
+            return self._real.QueryInformationJobObject(*args)
+
+    monkeypatch.setattr(docking_module, "_Win32Bindings", TracingBindings)
+    result = _run_vina_supervised(
+        [sys.executable, "-c", "while True: pass"],
+        0.2,
+        cwd=tmp_path,
+        temp_dir=tmp_path,
+        collect_job_accounting=True,
+    )
+
+    assert result.disposition_basis == "deadline_timeout"
+    assert result.job_cpu_seconds is not None and result.job_cpu_seconds > 0
+    assert result.load_window_unbiased_seconds is not None
+    assert result.load_window_unbiased_seconds >= 0.2
+    assert result.cleanup_outcome["job_terminated"] is True
+    assert result.cleanup_outcome["child_reaped"] is True
+
+    resume = events.index("resume")
+    terminate = events.index("terminate")
+    reap = events.index("reap")
+    query = events.index("accounting_query")
+    assert events[resume - 1] == "unbiased"
+    assert terminate < reap < query
+    assert events[query + 1] == "unbiased"
     assert not list(tmp_path.glob("vina-supervisor-*.log"))
