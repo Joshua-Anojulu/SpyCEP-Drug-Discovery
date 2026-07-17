@@ -746,3 +746,58 @@ azithromycin/7EDD disposition was a power setting, not chemistry. **The v2 campa
 
 **Caveat on this artifact:** it was emitted by the run that exited 1 (teardown only — after atomic emission and
 validator acceptance). The measurement is complete and valid; the non-zero exit was plumbing, now fixed.
+
+## Operator run 2 — the gate caught a real suspend (2026-07-17)
+
+The lock-teardown fix was committed on test-suite strength (`aeb6ae4`), so a fresh live calibration under
+`v2_20260717b` was run to verify it — and it surfaced something more important than the fix.
+
+**Result: FAIL (host drift), and it was correct.** The calibration measured `excursion_estimate = 862.0 s` against the
+0.5 s gate. Wall span 1463 s vs unbiased span 601 s: the measurement collected its full 601 unbiased seconds while
+**862 s of real time was suspended**, in a single 863-second gap at sample 75 (every other inter-sample gap = 1.0 s).
+`valid_for_campaign_gate: False`, `disposition = drift-fail`.
+
+**Independent corroboration from the Windows System event log:**
+- `16:42:35` Id 42 "The system is entering sleep" — 71 s after calibration start (16:41:24)
+- `16:57:02` Id 1 system time changed 21:42:40Z → 21:57:02Z — an **862 s** jump, matching the measured drift to the second
+- `16:57:05` Id 1 "returned from a low power state"; last wake source = Power Button
+
+**Root cause (not a timeout — 71 s is far below any idle threshold):** lid-close action on AC was `0x1 = Sleep`.
+Closing the lid slept the machine despite AC idle-sleep = never. This is the same failure class as the 2026-07-15
+azithromycin/7EDD incident (`elapsed_seconds: 29287`), caught **pre-flight** this time instead of mid-campaign.
+
+**Fix applied (Josh chose reversible power-config change):** lid-close AC action set to `0x0 = do nothing` via
+`powercfg`; DC and the power/sleep buttons left untouched. AC idle-sleep and hibernate were already `never`. Machine is
+now sleep-proof on AC from all three idle/lid triggers.
+  REVERT after the campaign:
+    powercfg /setacvalueindex SCHEME_CURRENT 4f971e89-eebd-4455-a8de-9e59040e7347 5ca83367-6e45-459f-a27b-476b1d01c936 1
+    powercfg /setactive SCHEME_CURRENT
+
+**On the lock fix:** exit 1 here was CORRECT (a genuine drift failure), and the fix behaved as designed — the stale-lock
+warning explicitly read "does not change the primary failure." The PASS-path-with-lock-contention exit-0 behavior
+remains unverified live (this run failed on drift before reaching it); low residual risk, noted.
+
+Next: re-calibrate now that the host cannot sleep; a PASS is required before launch.
+
+## Operator run 3 — PASS, host sleep-proofed (2026-07-17)
+
+Re-run under `v2_20260717b` after the lid-close fix. **PASS, exit 0.**
+
+| Metric | Value | vs run 2 (slept) |
+|---|---|---|
+| wall vs unbiased window | 600.1 s vs 600.1 s → **0.000 s** | 1463 vs 601 → 862 s |
+| `max_observed_drift_seconds` | **0.00257** (2.6 ms) | 862 |
+| utilization (floor/ceiling) | 0.972 / 0.972 | — |
+| sample_count / missed | 602 / 0 | 602 / 0 |
+| validator | **ACCEPTS** | rejected |
+
+Wall == unbiased to the millisecond confirms the host did not sleep — the lid fix held. Artifact
+`docs/methods/suspend_calibration_v2_20260717b.json` is validator-accepted and binds to `v2_20260717b`.
+
+**Lock-fix PASS path now verified live (previously the one untested branch):** OneDrive contended the lock again, and
+the fix degraded exactly as designed — "CALIBRATION PASSED AND THE VALIDATOR-ACCEPTED ARTIFACT IS INTACT. THIS IS A
+LOCK-CLEANUP WARNING, NOT HOST DRIFT OR CALIBRATION FAILURE", **exit 0**, stale lock left for manual clear (which was
+then cleared). OneDrive holds the handle longer than the 2.5 s retry window, so the manual-clear path is the normal
+operational outcome on this synced host, not an error.
+
+**Gate cleared. The v2 campaign is unblocked** pending launch under `v2_20260717b` on AC.
