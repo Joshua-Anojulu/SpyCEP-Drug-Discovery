@@ -66,6 +66,10 @@ MAX_INTERSAMPLE_GAP_SECONDS = 5.0
 MIN_SAMPLE_COUNT = 590
 NEGATIVE_EXCURSION_TOLERANCE_SECONDS = 0.5
 
+# Operational teardown policy only; these do not affect scientific classification.
+LAUNCHER_LOCK_RELEASE_ATTEMPTS = 6
+LAUNCHER_LOCK_RELEASE_BACKOFF_SECONDS = 0.5
+
 ATTEMPT_MANIFEST_RELATIVE = Path("docs/methods/attempt_manifest.json")
 SPECIES_CATALOG_RELATIVE = Path("docs/methods/species_audit.json")
 VINA_RELATIVE = Path("tools/vina.exe")
@@ -75,6 +79,7 @@ FAILURE_STAGES = (
     "input-resolution",
     "pre-hash",
     "lock",
+    "precise-clock-binding",
     "sampler-start",
     "supervisor-infra",
     "early-finish",
@@ -180,21 +185,27 @@ def _require_windows() -> None:
 
 
 def _configure_precise_clock(bindings: Any) -> None:
-    precise = bindings.kernel32.QueryUnbiasedInterruptTimePrecise
-    precise.argtypes = [bindings.ctypes.POINTER(bindings.ctypes.c_ulonglong)]
-    precise.restype = bindings.wintypes.BOOL
+    try:
+        # Microsoft exports the precise API from KernelBase, not kernel32.  Keep
+        # QueryUnbiasedInterruptTime on the supervisor's existing kernel32 binding.
+        kernelbase = bindings.ctypes.WinDLL("KernelBase", use_last_error=True)
+        precise = kernelbase.QueryUnbiasedInterruptTimePrecise
+        precise.argtypes = [bindings.ctypes.POINTER(bindings.ctypes.c_ulonglong)]
+        # QueryUnbiasedInterruptTimePrecise is VOID and has no failure indication.
+        precise.restype = None
+    except (AttributeError, OSError, TypeError) as exc:
+        raise CalibrationFailure(
+            f"Could not bind QueryUnbiasedInterruptTimePrecise from KernelBase: {exc}",
+            failure_stage="precise-clock-binding",
+            evidence={"exception": repr(exc)},
+        ) from exc
+    bindings.KernelBase = kernelbase
     bindings.QueryUnbiasedInterruptTimePrecise = precise
 
 
 def _query_precise_unbiased_interrupt_time(bindings: Any) -> int:
     value = bindings.ctypes.c_ulonglong()
-    bindings.ctypes.set_last_error(0)
-    if not bindings.QueryUnbiasedInterruptTimePrecise(bindings.ctypes.byref(value)):
-        raise _SupervisorInfrastructureError(
-            "QueryUnbiasedInterruptTimePrecise failed.",
-            failure_stage="QueryUnbiasedInterruptTimePrecise",
-            win32_error=bindings.ctypes.get_last_error(),
-        )
+    bindings.QueryUnbiasedInterruptTimePrecise(bindings.ctypes.byref(value))
     return int(value.value)
 
 
@@ -569,6 +580,59 @@ def _hash_inputs(paths: Mapping[str, Path]) -> dict[str, str]:
     return hashes
 
 
+def _remove_launcher_lock_directory(lock_path: Path) -> None:
+    """Remove exactly the lock directory owned by this process, without forcing."""
+    lock_path.rmdir()
+
+
+def _release_launcher_lock(lock_path: Path) -> OSError | None:
+    """Retry transient OneDrive handle contention for at most 2.5 seconds."""
+    last_error: OSError | None = None
+    for attempt in range(LAUNCHER_LOCK_RELEASE_ATTEMPTS):
+        try:
+            _remove_launcher_lock_directory(lock_path)
+            return None
+        except FileNotFoundError:
+            return None
+        except PermissionError as exc:
+            last_error = exc
+            if attempt + 1 < LAUNCHER_LOCK_RELEASE_ATTEMPTS:
+                time.sleep(LAUNCHER_LOCK_RELEASE_BACKOFF_SECONDS)
+        except OSError as exc:
+            return exc
+    return last_error
+
+
+def _warn_stale_launcher_lock(
+    lock_path: Path,
+    error: OSError,
+    *,
+    calibration_passed: bool,
+) -> None:
+    if calibration_passed:
+        outcome = (
+            "CALIBRATION PASSED AND THE VALIDATOR-ACCEPTED ARTIFACT IS INTACT. "
+            "THIS IS A LOCK-CLEANUP WARNING, NOT HOST DRIFT OR CALIBRATION FAILURE."
+        )
+    else:
+        outcome = (
+            "CALIBRATION DID NOT COMPLETE SUCCESSFULLY. LOCK CLEANUP ALSO FAILED; "
+            "THIS WARNING DOES NOT CHANGE THE PRIMARY FAILURE."
+        )
+    print("", file=sys.stderr)
+    print("!" * 78, file=sys.stderr)
+    print(f"WARNING: {outcome}", file=sys.stderr)
+    print(f"Stale launcher lock: {lock_path}", file=sys.stderr)
+    print(f"Windows release error: {error}", file=sys.stderr)
+    print(
+        "Before launching the campaign, verify no calibration or campaign is "
+        "running, then clear exactly:",
+        file=sys.stderr,
+    )
+    print("  rmdir .campaign.lock", file=sys.stderr)
+    print("!" * 78, file=sys.stderr, flush=True)
+
+
 @contextmanager
 def _launcher_lock(project_root: Path) -> Iterator[None]:
     lock_path = project_root / ".campaign.lock"
@@ -579,10 +643,20 @@ def _launcher_lock(project_root: Path) -> Iterator[None]:
             f"Launcher lock already exists: {lock_path}",
             failure_stage="lock",
         ) from exc
+    calibration_passed = False
     try:
         yield
+        # The body returns only after atomic emission and the real validator's
+        # acceptance.  A release problem after this point is plumbing, not science.
+        calibration_passed = True
     finally:
-        lock_path.rmdir()
+        release_error = _release_launcher_lock(lock_path)
+        if release_error is not None:
+            _warn_stale_launcher_lock(
+                lock_path,
+                release_error,
+                calibration_passed=calibration_passed,
+            )
 
 
 def _failure_record(

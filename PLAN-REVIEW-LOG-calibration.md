@@ -683,3 +683,66 @@ Verified independently, not trusting Codex's claims:
 
 **Deferred, correctly not built:** the live 600 s calibration run and the v2 campaign launch. Those are operator steps
 after commit + sign-off.
+
+## Rounds 2–3 — Codex fixes (live-run defects that every static check missed)
+
+**The build passed 225 tests, a line-by-line diff review, and seven rounds of design review — then died in 0 seconds
+on first contact with real Windows.** Both defects were invisible to every layer of defense because **every test
+mocked the Win32 bindings**. Recorded here because the lesson outlives the code.
+
+### Fix round 1 — the precise-clock binding (2 real bugs + the gap that shipped them)
+- **Wrong DLL.** `QueryUnbiasedInterruptTimePrecise` is **not exported by kernel32**. Verified export tables on this
+  host: kernel32 → MISSING; **KernelBase** and `api-ms-win-core-realtime-l1-1-1` → FOUND. Fixed to bind from KernelBase.
+- **Wrong return type.** The precise API returns **VOID**, not BOOL. The code set `restype = wintypes.BOOL` and did
+  `if not precise(...): raise`, reading a garbage register — it would have raised spuriously *even after* the DLL fix.
+- **The test gap that let both ship.** `tests/test_calibrate_suspend.py` defined its own
+  `QueryUnbiasedInterruptTimePrecise` on a fake bindings object, so `_configure_precise_clock` never ran against real
+  Windows and the DLL was never consulted. A green suite proved nothing about the binding. Added
+  `test_real_kernelbase_precise_clock_binding_is_nonzero_and_monotonic` using the **real** `_Win32Bindings`.
+- Binding failure now raises a staged `failure_stage="precise-clock-binding"` instead of a raw traceback.
+
+**Vindication of "measure, don't assume":** the real precise-vs-non-precise lag on this host is **~358 µs** — **43×
+tighter** than the `15.625 ms` Claude had frozen and mislabelled "Documented — Microsoft" (Codex R3 #2). Had that
+assumption survived, the gate would have carried a meaningless inflation term from an overstated number.
+
+### Fix round 2 — teardown masquerading as science
+The live calibration then **ran the full 10 minutes and emitted a valid PASS artifact** — and still exited 1:
+`PermissionError: [WinError 5]` on `.campaign.lock` rmdir at teardown. Diagnosis: the repo is in a **OneDrive-synced
+tree**; OneDrive transiently held a handle. Manual `rmdir` succeeded immediately after the process exited, confirming a
+transient handle, not a conflict.
+- **Exit code now reports the science, not the plumbing.** Release retries 6× over 2.5 s; a persistent failure *after*
+  atomic emission + validator acceptance becomes a prominent warning ("NOT HOST DRIFT OR CALIBRATION FAILURE") naming
+  the stale path and the exact `rmdir` command — exit 0. Lock **acquisition** failure still aborts; the
+  single-instance guarantee is untouched.
+- Why it mattered: a stale `.campaign.lock` silently blocks the next launch — **exactly how the 2026-07-15 campaign
+  died at stage 2 of 4**.
+
+### Claude's verdict — VERIFIED
+Verified independently: KernelBase binding + `restype=None` + truthiness check removed; real unmocked binding test
+present and passing; non-precise clock still on kernel32 in `docking.py`, untouched; acquisition path still aborts;
+`calibration_passed` flips only after emission and validation. Proof run by Claude: **232 collected, exit 0** (225 →
+229 → 232). Frozen constants intact 3/3. Scope: two files. The real artifact was not opened or modified.
+
+## FIRST REAL MEASUREMENT — the host is clean
+
+`docs/methods/suspend_calibration_v2_20260717.json` (campaign `v2_20260717`, 2026-07-17T13:33:12Z), **accepted by the
+real `validate_suspend_calibration()`**:
+
+| Metric | Value | Gate |
+|---|---|---|
+| `max_observed_drift_seconds` | **0.00136** | ≤ 0.5 — **370× margin** |
+| `utilization_floor_ratio` | 0.9778 | ≥ 0.90 ✓ |
+| `utilization_ceiling_ratio` | 0.9778 | ≤ 1.10 ✓ |
+| `job_cpu_seconds` / `load_window_unbiased_seconds` | 586.72 / 600.04 | — |
+| `sample_count` / `missed_deadline_count` | 602 / **0** | ≥ 590 ✓ |
+| `disposition_basis` | `deadline_timeout` | vina outlasted 600 s, as ADR-0001's 1,429 s evidence predicted ✓ |
+
+Provenance landed complete: 7 inputs hashed **before and after**, resolved box, `drift_analysis`, `frozen_constants`,
+and 602-entry sample/skew/lag series.
+
+**Root cause of the 2026-07-15 incident, confirmed independently of the code:** `powercfg` shows AC sleep = **never**,
+but **DC (battery) sleep = 0x258 = 600 s**. The host sleeps after 10 minutes idle *on battery*. The 29,287 s
+azithromycin/7EDD disposition was a power setting, not chemistry. **The v2 campaign must run on AC.**
+
+**Caveat on this artifact:** it was emitted by the run that exited 1 (teardown only — after atomic emission and
+validator acceptance). The measurement is complete and valid; the non-zero exit was plumbing, now fixed.

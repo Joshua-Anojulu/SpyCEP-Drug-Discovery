@@ -1,8 +1,10 @@
 import importlib
 import json
 import os
+import sys
 import threading
 import time
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
@@ -60,6 +62,33 @@ def _supervised(cpu, window, *, basis="deadline_timeout"):
     )
 
 
+def _install_successful_calibration_seams(monkeypatch):
+    @contextmanager
+    def no_results_lock(_project_root, _campaign_id):
+        yield
+
+    def emit_valid_pass(_project_root, campaign_id, target):
+        record = {
+            "calibration_schema_version": calibration.CALIBRATION_SCHEMA_VERSION,
+            "duration_seconds": 600.0,
+            "load": calibration.LOAD_NAME,
+            "cpu": 1,
+            "max_observed_drift_seconds": 0.001,
+            "suspend_threshold_seconds": 5.0,
+            "campaign_id": campaign_id,
+        }
+        validate_suspend_calibration(record)
+        calibration._atomic_json_no_replace(target, record)
+        return target
+
+    monkeypatch.setenv("SPYCEP_CAMPAIGN_ID", "lock-release-test")
+    monkeypatch.setattr(calibration, "_require_windows", lambda: None)
+    monkeypatch.setattr(calibration, "campaign_lock", no_results_lock)
+    monkeypatch.setattr(
+        calibration, "_perform_locked_calibration", emit_valid_pass
+    )
+
+
 def test_frozen_measurement_constants_are_exact():
     assert calibration.CPU_UTILIZATION_FLOOR == 0.90
     assert calibration.CPU_UTILIZATION_CEILING == 1.10
@@ -67,6 +96,165 @@ def test_frozen_measurement_constants_are_exact():
     assert calibration.MAX_INTERSAMPLE_GAP_SECONDS == 5.0
     assert calibration.MIN_SAMPLE_COUNT == 590
     assert calibration.NEGATIVE_EXCURSION_TOLERANCE_SECONDS == 0.5
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="real Windows clock binding")
+def test_real_kernelbase_precise_clock_binding_is_nonzero_and_monotonic():
+    bindings = calibration._Win32Bindings()
+    calibration._configure_precise_clock(bindings)
+
+    first = calibration._query_precise_unbiased_interrupt_time(bindings)
+    second = calibration._query_precise_unbiased_interrupt_time(bindings)
+
+    assert bindings.QueryUnbiasedInterruptTimePrecise.restype is None
+    assert isinstance(first, int) and 0 < first <= second < 2**64
+
+
+def test_precise_clock_binding_failure_has_an_explicit_stage():
+    class BrokenCtypes:
+        @staticmethod
+        def WinDLL(*_args, **_kwargs):
+            raise OSError("synthetic missing KernelBase export")
+
+    class BrokenBindings:
+        ctypes = BrokenCtypes
+
+    with pytest.raises(
+        calibration.CalibrationFailure,
+        match="QueryUnbiasedInterruptTimePrecise",
+    ) as caught:
+        calibration._configure_precise_clock(BrokenBindings())
+    assert caught.value.failure_stage == "precise-clock-binding"
+
+
+def test_precise_clock_binding_failure_emits_staged_invalid_artifact(
+    tmp_path, monkeypatch
+):
+    class BrokenCtypes:
+        @staticmethod
+        def WinDLL(*_args, **_kwargs):
+            raise OSError("synthetic missing KernelBase export")
+
+    class BrokenBindings:
+        ctypes = BrokenCtypes
+
+    @contextmanager
+    def no_results_lock(_project_root, _campaign_id):
+        yield
+
+    def fail_during_binding(*_args, **_kwargs):
+        calibration._configure_precise_clock(BrokenBindings())
+
+    monkeypatch.setenv("SPYCEP_CAMPAIGN_ID", "binding-failure-test")
+    monkeypatch.setattr(calibration, "_require_windows", lambda: None)
+    monkeypatch.setattr(calibration, "campaign_lock", no_results_lock)
+    monkeypatch.setattr(
+        calibration, "_perform_locked_calibration", fail_during_binding
+    )
+
+    with pytest.raises(calibration.CalibrationFailure) as caught:
+        calibration.run_calibration(tmp_path)
+
+    artifact = caught.value.artifact_path
+    assert artifact is not None and artifact.is_file()
+    record = json.loads(artifact.read_text(encoding="utf-8"))
+    assert record["failure_stage"] == "precise-clock-binding"
+    with pytest.raises(InfrastructureError):
+        validate_suspend_calibration(record)
+
+
+def test_transient_launcher_lock_release_permission_error_retries_and_passes(
+    tmp_path, monkeypatch, capsys
+):
+    _install_successful_calibration_seams(monkeypatch)
+    real_remove = calibration._remove_launcher_lock_directory
+    calls = []
+    sleeps = []
+
+    def transient_remove(lock_path):
+        calls.append(lock_path)
+        if len(calls) < 3:
+            raise PermissionError(5, "synthetic OneDrive handle", str(lock_path))
+        real_remove(lock_path)
+
+    monkeypatch.setattr(
+        calibration, "_remove_launcher_lock_directory", transient_remove
+    )
+    monkeypatch.setattr(calibration.time, "sleep", sleeps.append)
+
+    artifact = calibration.run_calibration(tmp_path)
+
+    assert artifact.is_file()
+    validate_suspend_calibration(json.loads(artifact.read_text(encoding="utf-8")))
+    assert len(calls) == 3
+    assert sleeps == [
+        calibration.LAUNCHER_LOCK_RELEASE_BACKOFF_SECONDS,
+        calibration.LAUNCHER_LOCK_RELEASE_BACKOFF_SECONDS,
+    ]
+    assert not (tmp_path / ".campaign.lock").exists()
+    assert "LOCK-CLEANUP WARNING" not in capsys.readouterr().err
+
+
+def test_persistent_launcher_lock_release_error_warns_but_preserves_pass(
+    tmp_path, monkeypatch, capsys
+):
+    _install_successful_calibration_seams(monkeypatch)
+    calls = []
+    sleeps = []
+
+    def persistent_remove(lock_path):
+        calls.append(lock_path)
+        raise PermissionError(5, "synthetic persistent handle", str(lock_path))
+
+    monkeypatch.setattr(
+        calibration, "_remove_launcher_lock_directory", persistent_remove
+    )
+    monkeypatch.setattr(calibration.time, "sleep", sleeps.append)
+
+    artifact = calibration.run_calibration(tmp_path)
+    warning = capsys.readouterr().err
+
+    assert artifact.is_file()
+    validate_suspend_calibration(json.loads(artifact.read_text(encoding="utf-8")))
+    assert len(calls) == calibration.LAUNCHER_LOCK_RELEASE_ATTEMPTS
+    assert len(sleeps) == calibration.LAUNCHER_LOCK_RELEASE_ATTEMPTS - 1
+    assert (tmp_path / ".campaign.lock").is_dir()
+    assert "CALIBRATION PASSED AND THE VALIDATOR-ACCEPTED ARTIFACT IS INTACT" in warning
+    assert "NOT HOST DRIFT OR CALIBRATION FAILURE" in warning
+    assert str(tmp_path / ".campaign.lock") in warning
+    assert "rmdir .campaign.lock" in warning
+
+    # The production code deliberately does not force-delete a persistent lock.
+    (tmp_path / ".campaign.lock").rmdir()
+
+
+def test_launcher_lock_acquisition_failure_still_aborts(tmp_path, monkeypatch):
+    monkeypatch.setenv("SPYCEP_CAMPAIGN_ID", "lock-acquisition-test")
+    monkeypatch.setattr(calibration, "_require_windows", lambda: None)
+    lock_path = tmp_path / ".campaign.lock"
+    lock_path.mkdir()
+    called = False
+
+    def forbidden_perform(*_args, **_kwargs):
+        nonlocal called
+        called = True
+        raise AssertionError("calibration ran despite acquisition failure")
+
+    monkeypatch.setattr(
+        calibration, "_perform_locked_calibration", forbidden_perform
+    )
+
+    with pytest.raises(
+        calibration.CalibrationFailure,
+        match="Launcher lock already exists",
+    ) as caught:
+        calibration.run_calibration(tmp_path)
+
+    assert caught.value.failure_stage == "lock"
+    assert caught.value.artifact_path is not None
+    assert caught.value.artifact_path.is_file()
+    assert called is False
+    assert lock_path.is_dir()
 
 
 def test_each_sample_read_order_is_nonprecise_precise_wall_precise_nonprecise():
