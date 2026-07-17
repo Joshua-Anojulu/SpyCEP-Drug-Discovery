@@ -5,6 +5,27 @@ set -u
 PY=./.venv/Scripts/python.exe
 LOCKDIR=.campaign.lock
 
+# The schema-v2 entry points refuse to start without BOTH of these. Require them from
+# the environment rather than hardcoding: an ID baked into this script gets silently
+# reused on the next run, and PLAN-timeout-fix.md §H17 forbids cross-campaign reuse.
+#   SPYCEP_CAMPAIGN_ID=v2_20260716 \
+#   SPYCEP_SUSPEND_CALIBRATION_PATH=docs/methods/suspend_calibration.json \
+#   ./run_campaign.sh
+: "${SPYCEP_CAMPAIGN_ID:?Set a fresh campaign id per campaign (PLAN-timeout-fix.md §H17)}"
+: "${SPYCEP_SUSPEND_CALIBRATION_PATH:?Set the pre-campaign calibration artifact path (§H9)}"
+export SPYCEP_CAMPAIGN_ID SPYCEP_SUSPEND_CALIBRATION_PATH
+
+CAMPAIGN_ROOT="results/docking/campaign_${SPYCEP_CAMPAIGN_ID}"
+
+# Campaigns are immutable and never resumed. Python enforces this per-attempt
+# (attempt_dir.mkdir(exist_ok=False)), which aborts mid-stage after real work; fail
+# up front instead so a reused ID costs seconds rather than hours.
+if [ -e "$CAMPAIGN_ROOT" ]; then
+    echo "REFUSING TO START: $CAMPAIGN_ROOT already exists — pick a new SPYCEP_CAMPAIGN_ID."
+    echo "Campaigns are immutable and are never resumed (PLAN-timeout-fix.md §H17)."
+    exit 1
+fi
+
 # Single-instance guard. A concurrent second campaign races the first on identical
 # output paths and inflates every elapsed_seconds, which fabricates `cause: timeout`
 # dispositions (this happened on 2026-07-14: clindamycin@5XYA).
@@ -30,6 +51,10 @@ run_stage () {
 }
 
 echo "=== STAGE 2 CAMPAIGN START: $(date) ==="
+echo "campaign_id   : $SPYCEP_CAMPAIGN_ID"
+echo "campaign_root : $CAMPAIGN_ROOT"
+echo "calibration   : $SPYCEP_SUSPEND_CALIBRATION_PATH"
+echo "code          : $(git rev-parse --short HEAD 2>/dev/null || echo unknown)$(git diff --quiet 2>/dev/null || echo ' -DIRTY')"
 run_stage "[1/4] WIDE (154 attempts)"  $PY scripts/run_docking.py
 run_stage "[2/4] TIGHT (154 attempts)" $PY scripts/run_docking.py --tight
 run_stage "[3/4] SPEB (23 attempts)"   $PY scripts/run_speb_positive_control.py
