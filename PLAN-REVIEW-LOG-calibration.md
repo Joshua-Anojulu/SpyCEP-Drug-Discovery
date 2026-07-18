@@ -801,3 +801,21 @@ then cleared). OneDrive holds the handle longer than the 2.5 s retry window, so 
 operational outcome on this synced host, not an error.
 
 **Gate cleared. The v2 campaign is unblocked** pending launch under `v2_20260717b` on AC.
+
+## Campaign run 1 (v2_20260717b) — INTERRUPTED BY SLEEP, dead by design (2026-07-18)
+
+Launched 2026-07-17 23:10 (code 01d61e3). Ran ~2h through WIDE (~82 of 154 attempts), then the host **slept
+01:17 → 02:51 (~1h34m)** and the background task was killed on/after resume. Windows log: Id 42 "entering sleep"
+01:17:00; resume ~02:51.
+
+**Root cause = the sleep vector I missed.** The hidden **"System unattended sleep timeout" was 0x78 = 120 s** on AC.
+This sleeps an *unattended* host after 2 min regardless of idle-sleep = never — so the earlier lid/idle/hibernate fixes
+were necessary but insufficient. Set to 0 (never) on AC. **All four AC sleep vectors now confirmed closed**
+(lid / idle / hibernate / unattended = 0x0).
+  REVERT (with the earlier lid revert) after the campaign:
+    powercfg /setacvalueindex SCHEME_CURRENT 238c9fa8-0aad-41ed-83f4-97be242c8f20 7bc4a2f9-d8fc-4469-b07b-33eb785aaca0 120
+    powercfg /setactive SCHEME_CURRENT
+
+**This partial campaign is dead and must not be resumed or partially used:** campaigns are immutable/no-resume
+(§H17), it contains an in-run suspend event, and the gating calibration (17:37 on 7/17) is now stale. A retry requires
+a FRESH calibration + a FRESH campaign id. No runaway processes remained (vina count 0), no stuck lock.
