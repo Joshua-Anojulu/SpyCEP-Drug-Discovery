@@ -27,9 +27,11 @@ from spycep_drug_discovery.docking import (
     campaign_lock,
     campaign_output_dir,
     dock_ligand,
+    initialize_spawn_retry_ledger,
     is_continuable_scientific_disposition,
     require_campaign_id,
     require_suspend_calibration,
+    require_unsealed,
     write_timeout_qc_report,
 )
 from spycep_drug_discovery.docking_analysis import (
@@ -109,6 +111,7 @@ def _load_and_require_gates():
 
 
 def _run_campaign(campaign_id: str, pose_dir: Path) -> None:
+    initialize_spawn_retry_ledger(PROJECT_ROOT, campaign_id)
     (
         catalog,
         attempt_manifest,
@@ -233,13 +236,16 @@ def _run_campaign(campaign_id: str, pose_dir: Path) -> None:
 
     ranked = rank_docking_results(valid_results)
     write_ranking_csv(ranked, RANKING)
-    timeout_qc_path, _ = write_timeout_qc_report(pose_dir, run_records)
+    timeout_qc_path, _ = write_timeout_qc_report(
+        pose_dir, run_records, project_root=PROJECT_ROOT
+    )
     manifest = build_run_manifest(
         workflow=WORKFLOW,
         run_records=run_records,
         species_catalog_sha256=species_hash,
         attempt_manifest_sha256=attempt_hash,
         software_versions=versions,
+        project_root=PROJECT_ROOT,
         preparation_records=list(prepared_by_key.values()),
         metadata={
             "resume_requested": RESUME,
@@ -273,6 +279,7 @@ def main() -> None:
         )
     pose_dir = campaign_output_dir(PROJECT_ROOT, campaign_id, WORKFLOW)
     with campaign_lock(PROJECT_ROOT, campaign_id):
+        require_unsealed(PROJECT_ROOT, campaign_id)
         _run_campaign(campaign_id, pose_dir)
 
 

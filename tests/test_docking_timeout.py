@@ -116,7 +116,7 @@ def _valid_record(tmp_path, monkeypatch, *, unbiased=1.0, wall=1.0):
 
 
 def test_frozen_timeout_method_constants_are_exact():
-    assert RUN_SCHEMA_VERSION == "docking-run-record-v2"
+    assert RUN_SCHEMA_VERSION == "docking-run-record-v3"
     assert DEFAULT_TIMEOUT_SECONDS == 1800.0
     assert DEFAULT_TIMEOUT_MS == 1800000
     assert SUSPEND_THRESHOLD == 5.0
@@ -408,7 +408,7 @@ def test_qc_report_is_content_addressed_and_gate_rejects_unresolved(
     tmp_path, monkeypatch
 ):
     record = _valid_record(tmp_path, monkeypatch)
-    report = build_timeout_qc_report([record])
+    report = build_timeout_qc_report([record], project_root=tmp_path)
     validate_timeout_qc_gate(report)
 
     report = copy.deepcopy(report)

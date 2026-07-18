@@ -16,7 +16,11 @@ from statistics import mean
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from spycep_drug_discovery.docking import validate_campaign_manifest_set
+from spycep_drug_discovery.docking import (
+    DockingError,
+    require_campaign_seal,
+    validate_campaign_manifest_set,
+)
 
 METHODS = PROJECT_ROOT / "docs" / "methods"
 WIDE = METHODS / "docking_result.json"
@@ -62,12 +66,17 @@ def _top_rows(result: dict, n: int = 10) -> list[str]:
 def main() -> None:
     wide = json.loads(WIDE.read_text(encoding="utf-8"))
     tight = json.loads(TIGHT.read_text(encoding="utf-8"))
-    stats = json.loads(STATS.read_text(encoding="utf-8"))
     speb = json.loads(SPEB.read_text(encoding="utf-8"))
-    boron = json.loads(BORON.read_text(encoding="utf-8")) if BORON.exists() else None
-    validate_campaign_manifest_set(
-        (wide, tight, speb, *((boron,) if boron else ()))
-    )
+    boron = json.loads(BORON.read_text(encoding="utf-8"))
+    validate_campaign_manifest_set((wide, tight, speb, boron))
+    seal = require_campaign_seal(PROJECT_ROOT, str(wide["campaign_id"]))
+    stats = json.loads(STATS.read_text(encoding="utf-8"))
+    if (
+        stats.get("campaign_id") != seal["campaign_id"]
+        or stats.get("campaign_ledger_content_sha256")
+        != seal["ledger_content_sha256"]
+    ):
+        raise DockingError("Docking statistics do not match the sealed campaign.")
 
     ws, ts = _set_stats(wide), _set_stats(tight)
     charged = sum(1 for r in wide["ligand_preparation"] if r["formal_charge"] != 0)
@@ -151,16 +160,15 @@ def main() -> None:
         "",
     ]
 
-    if boron:
-        best = min(boron["results"], key=lambda r: r["best_affinity_kcal_mol"])
-        lines += [
-            "## Boron gem-diol surrogates",
-            "",
-            f"- {boron['method']}",
-            f"- Best surrogate: {best['parent_ligand_id']} at {best['best_affinity_kcal_mol']:.2f} kcal/mol "
-            f"({best['pocket_id']}). Approximation only; see `boron_surrogate_result.json`.",
-            "",
-        ]
+    best = min(boron["results"], key=lambda r: r["best_affinity_kcal_mol"])
+    lines += [
+        "## Boron gem-diol surrogates",
+        "",
+        f"- {boron['method']}",
+        f"- Best surrogate: {best['parent_ligand_id']} at {best['best_affinity_kcal_mol']:.2f} kcal/mol "
+        f"({best['pocket_id']}). Approximation only; see `boron_surrogate_result.json`.",
+        "",
+    ]
 
     lines += [
         "## Limitations",

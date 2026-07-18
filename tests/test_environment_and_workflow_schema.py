@@ -106,6 +106,8 @@ def _run_record(workflow):
         "sidecar_path": "pose.run.json",
         "resumed": False,
         "valid_fit": True,
+        "spawn_retry_count": 0,
+        "spawn_failures": [],
         "modes": [
             {
                 "mode": 1,
@@ -139,6 +141,7 @@ def test_all_four_workflows_serialize_one_shared_run_record_schema():
             species_catalog_sha256="d" * 64,
             attempt_manifest_sha256="e" * 64,
             software_versions=record["software_versions"],
+            project_root=Path.cwd(),
         )
 
         assert manifest["run_schema_version"] == RUN_SCHEMA_VERSION

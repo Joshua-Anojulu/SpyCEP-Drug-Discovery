@@ -31,6 +31,8 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 from spycep_drug_discovery.docking import (
+    DockingError,
+    require_campaign_seal,
     validate_campaign_manifest_set,
     validate_manifest_timeout_qc,
 )
@@ -215,13 +217,23 @@ def figure_triad_engagement():
 
 
 def main() -> None:
-    validate_campaign_manifest_set(
-        (
-            _manifest("docking_result.json"),
-            _manifest("docking_result_tight.json"),
-            _manifest("speb_positive_control_result.json"),
-        )
+    manifests = (
+        _manifest("docking_result.json"),
+        _manifest("docking_result_tight.json"),
+        _manifest("speb_positive_control_result.json"),
+        _manifest("boron_surrogate_result.json"),
     )
+    validate_campaign_manifest_set(manifests)
+    seal = require_campaign_seal(PROJECT_ROOT, str(manifests[0]["campaign_id"]))
+    statistics = json.loads(
+        (METHODS / "docking_statistics.json").read_text(encoding="utf-8")
+    )
+    if (
+        statistics.get("campaign_id") != seal["campaign_id"]
+        or statistics.get("campaign_ledger_content_sha256")
+        != seal["ledger_content_sha256"]
+    ):
+        raise DockingError("Docking statistics do not match the sealed campaign.")
     FIGDIR.mkdir(parents=True, exist_ok=True)
     figure_custom_vs_fda()
     figure_speb_positive_control()

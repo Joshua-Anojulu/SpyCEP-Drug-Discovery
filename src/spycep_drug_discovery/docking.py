@@ -12,14 +12,14 @@ import tempfile
 import time
 import uuid
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from statistics import mean
-from typing import Any, Iterator, Mapping, Sequence
+from typing import Any, Callable, Iterator, Mapping, Sequence
 
 
 DOCKING_VERSION = "2026-07-13-stage1"
-RUN_SCHEMA_VERSION = "docking-run-record-v2"
+RUN_SCHEMA_VERSION = "docking-run-record-v3"
 DOCKING_OUTPUT_DIR = "results/docking"
 DEFAULT_SEED = 42
 DEFAULT_EXHAUSTIVENESS = 8
@@ -36,6 +36,13 @@ MAX_SUSPENDED_RETRIES = 2
 MINIMUM_WINDOWS_BUILD = 10240
 CALIBRATION_DURATION_SECONDS = 600.0
 MAX_AWAKE_CALIBRATION_DRIFT_SECONDS = 0.5
+TRANSIENT_SPAWN_STATUS_ALLOWLIST = frozenset({0xC0000142})
+TRANSIENT_SPAWN_MAX_ELAPSED_SECONDS = 1.0
+MAX_TRANSIENT_SPAWN_RETRIES = 3
+TRANSIENT_SPAWN_BACKOFF_SECONDS = (2.0, 5.0, 10.0)
+CAMPAIGN_TRANSIENT_SPAWN_BUDGET = 10
+SPAWN_RETRY_LEDGER_SCHEMA_VERSION = "docking-spawn-retry-ledger-v1"
+CAMPAIGN_SEAL_SCHEMA_VERSION = "docking-campaign-seal-v1"
 
 WAIT_OBJECT_0 = 0x00000000
 WAIT_TIMEOUT = 0x00000102
@@ -98,6 +105,8 @@ RUN_RECORD_REQUIRED_FIELDS = frozenset(
         "sidecar_path",
         "resumed",
         "valid_fit",
+        "spawn_retry_count",
+        "spawn_failures",
     }
 )
 
@@ -161,6 +170,44 @@ class SupervisedResult:
     cleanup_outcome: Mapping[str, Any] | None = None
     job_cpu_seconds: float | None = None
     load_window_unbiased_seconds: float | None = None
+
+
+@dataclass
+class SpawnRetryState:
+    """Mutable retry budget and immutable-predecessor history for one claim."""
+
+    retry_count: int = 0
+    failures: list[dict[str, Any]] = field(default_factory=list)
+
+
+class _SpawnRetryLedgerError(InfrastructureError):
+    """Fail-closed operational-ledger error with a structured failure stage."""
+
+    def __init__(self, message: str, *, failure_stage: str):
+        super().__init__(message)
+        self.failure_stage = failure_stage
+
+
+def is_transient_spawn_failure(
+    supervised: SupervisedResult,
+    timeout_seconds: float,
+) -> bool:
+    """Match only the observed silent, near-instant DLL-init failure signature."""
+    return (
+        supervised.disposition_basis == "wait_signaled"
+        and supervised.exit_code is not None
+        and (int(supervised.exit_code) & 0xFFFFFFFF)
+        in TRANSIENT_SPAWN_STATUS_ALLOWLIST
+        and supervised.stdout.strip() == ""
+        and supervised.stderr.strip() == ""
+        and float(supervised.unbiased_seconds)
+        < TRANSIENT_SPAWN_MAX_ELAPSED_SECONDS
+        and float(supervised.unbiased_seconds) < float(timeout_seconds)
+        and (
+            float(supervised.wall_seconds) - float(supervised.unbiased_seconds)
+        )
+        < SUSPEND_THRESHOLD
+    )
 
 
 def supervisor_source_sha256() -> str:
@@ -928,6 +975,7 @@ def dock_ligand(
     resume: bool = False,
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
     campaign_id: str | None = None,
+    spawn_retry_sleep: Callable[[float], None] = time.sleep,
 ) -> dict[str, Any]:
     """Dock one state in immutable attempt directories and select one authority."""
     entity_id = str(entity_id or ligand_id or "")
@@ -1093,78 +1141,256 @@ def dock_ligand(
         )
 
     quarantined: list[dict[str, Any]] = []
+    state = SpawnRetryState(retry_count=0, failures=[])
+
+    def _run_one_spawn(
+        state: SpawnRetryState,
+        quarantined: Sequence[Mapping[str, Any]],
+    ) -> tuple[SupervisedResult, dict[str, Any]]:
+        while True:
+            attempt_instance_id = uuid.uuid4().hex
+            context = attempt_context(attempt_instance_id)
+            attempt_dir = context["attempt_dir"]
+            out_path = context["out_path"]
+            marker_path = context["marker_path"]
+            sidecar_path = context["sidecar_path"]
+            common = context["common"]
+            attempt_dir.mkdir(parents=False, exist_ok=False)
+            try:
+                supervised = _run_vina_supervised(
+                    context["command"],
+                    timeout_seconds,
+                    cwd=project_root,
+                    temp_dir=attempt_dir,
+                )
+            except BaseException as exc:
+                if isinstance(exc, _SupervisorInfrastructureError):
+                    failure_stage = exc.failure_stage
+                    win32_error = exc.win32_error
+                    cleanup_outcome = exc.cleanup_outcome
+                    failure_exit_code = exc.exit_code
+                    wall_seconds = exc.wall_seconds
+                    unbiased_seconds = exc.unbiased_seconds
+                else:
+                    failure_stage = "supervisor_exception"
+                    win32_error = None
+                    cleanup_outcome = {"exception_type": type(exc).__name__}
+                    failure_exit_code = None
+                    wall_seconds = None
+                    unbiased_seconds = None
+                out_path.unlink(missing_ok=True)
+                _atomic_text(
+                    marker_path,
+                    f"status=infrastructure_failure\nfailure_stage={failure_stage}\n",
+                )
+                record = _final_record(
+                    common,
+                    wall_seconds=wall_seconds,
+                    unbiased_seconds=unbiased_seconds,
+                    disposition_basis="infrastructure_failure",
+                    wait_result=WAIT_FAILED,
+                    termination_action="TerminateJobObject",
+                    timing_ambiguous=False,
+                    authoritative_selected=False,
+                    status="infrastructure_failure",
+                    cause="infrastructure_failure",
+                    exit_code=failure_exit_code,
+                    output_path=marker_path,
+                    project_root=project_root,
+                    resumed=False,
+                    modes=(),
+                    failure_stage=failure_stage,
+                    win32_error=win32_error,
+                    cleanup_outcome=cleanup_outcome,
+                    spawn_failures=state.failures,
+                    validate=False,
+                )
+                validate_run_record(record, allow_infrastructure=True)
+                _atomic_json(sidecar_path, record)
+                _atomic_json(
+                    selection_path,
+                    _selection_manifest(
+                        common,
+                        status="blocked_infrastructure_failure",
+                        selected_attempt_instance_id=None,
+                        quarantined=quarantined,
+                        spawn_failures=state.failures,
+                        blocking_attempt=record,
+                    ),
+                )
+                raise InfrastructureError(
+                    f"Docking infrastructure failed at {failure_stage}: {exc}",
+                    run_record=record,
+                ) from exc
+
+            if is_transient_spawn_failure(supervised, timeout_seconds):
+                if state.retry_count >= MAX_TRANSIENT_SPAWN_RETRIES:
+                    out_path.unlink(missing_ok=True)
+                    failure_stage = "transient_spawn_failure_exhausted"
+                    _atomic_text(
+                        marker_path,
+                        f"status=infrastructure_failure\nfailure_stage={failure_stage}\n",
+                    )
+                    record = _final_record(
+                        common,
+                        wall_seconds=supervised.wall_seconds,
+                        unbiased_seconds=supervised.unbiased_seconds,
+                        disposition_basis="infrastructure_failure",
+                        wait_result=supervised.wait_result,
+                        termination_action=supervised.termination_action,
+                        timing_ambiguous=False,
+                        authoritative_selected=False,
+                        status="infrastructure_failure",
+                        cause="infrastructure_failure",
+                        exit_code=0xC0000142,
+                        output_path=marker_path,
+                        project_root=project_root,
+                        resumed=False,
+                        modes=(),
+                        stdout_tail=_tail(supervised.stdout),
+                        stderr_tail=_tail(supervised.stderr),
+                        failure_stage=failure_stage,
+                        win32_error=None,
+                        cleanup_outcome=supervised.cleanup_outcome,
+                        spawn_failures=state.failures,
+                        validate=False,
+                    )
+                    validate_run_record(record, allow_infrastructure=True)
+                    _atomic_json(sidecar_path, record)
+                    _atomic_json(
+                        selection_path,
+                        _selection_manifest(
+                            common,
+                            status="blocked_infrastructure_failure",
+                            selected_attempt_instance_id=None,
+                            quarantined=quarantined,
+                            spawn_failures=state.failures,
+                            blocking_attempt=record,
+                        ),
+                    )
+                    raise InfrastructureError(
+                        "Docking infrastructure exhausted the transient spawn-retry budget.",
+                        run_record=record,
+                    )
+
+                if state.retry_count == 0:
+                    try:
+                        _register_spawn_retry_claim(
+                            project_root,
+                            campaign_id,
+                            common["claim_key"],
+                        )
+                    except _SpawnRetryLedgerError as exc:
+                        out_path.unlink(missing_ok=True)
+                        failure_stage = exc.failure_stage
+                        _atomic_text(
+                            marker_path,
+                            f"status=infrastructure_failure\nfailure_stage={failure_stage}\n",
+                        )
+                        record = _final_record(
+                            common,
+                            wall_seconds=supervised.wall_seconds,
+                            unbiased_seconds=supervised.unbiased_seconds,
+                            disposition_basis="infrastructure_failure",
+                            wait_result=supervised.wait_result,
+                            termination_action=supervised.termination_action,
+                            timing_ambiguous=False,
+                            authoritative_selected=False,
+                            status="infrastructure_failure",
+                            cause="infrastructure_failure",
+                            exit_code=0xC0000142,
+                            output_path=marker_path,
+                            project_root=project_root,
+                            resumed=False,
+                            modes=(),
+                            stdout_tail=_tail(supervised.stdout),
+                            stderr_tail=_tail(supervised.stderr),
+                            failure_stage=failure_stage,
+                            win32_error=None,
+                            cleanup_outcome=supervised.cleanup_outcome,
+                            spawn_failures=state.failures,
+                            validate=False,
+                        )
+                        validate_run_record(record, allow_infrastructure=True)
+                        _atomic_json(sidecar_path, record)
+                        _atomic_json(
+                            selection_path,
+                            _selection_manifest(
+                                common,
+                                status="blocked_infrastructure_failure",
+                                selected_attempt_instance_id=None,
+                                quarantined=quarantined,
+                                spawn_failures=state.failures,
+                                blocking_attempt=record,
+                            ),
+                        )
+                        raise InfrastructureError(
+                            f"Docking campaign spawn-retry ledger failed: {exc}",
+                            run_record=record,
+                        ) from exc
+
+                out_path.unlink(missing_ok=True)
+                _atomic_text(
+                    marker_path,
+                    "status=transient_spawn_failure\nexit_code=0xC0000142\n",
+                )
+                predecessor = _final_record(
+                    common,
+                    wall_seconds=supervised.wall_seconds,
+                    unbiased_seconds=supervised.unbiased_seconds,
+                    disposition_basis=supervised.disposition_basis,
+                    wait_result=supervised.wait_result,
+                    termination_action=supervised.termination_action,
+                    timing_ambiguous=False,
+                    authoritative_selected=False,
+                    status="failed",
+                    cause="transient_spawn_failure",
+                    exit_code=0xC0000142,
+                    output_path=marker_path,
+                    project_root=project_root,
+                    resumed=False,
+                    modes=(),
+                    stdout_tail=_tail(supervised.stdout),
+                    stderr_tail=_tail(supervised.stderr),
+                    cleanup_outcome=supervised.cleanup_outcome,
+                    spawn_failures=state.failures,
+                )
+                _atomic_json(sidecar_path, predecessor)
+                state.failures.append(
+                    {
+                        "attempt_instance_id": attempt_instance_id,
+                        "exit_code": 0xC0000142,
+                        "unbiased_seconds": float(supervised.unbiased_seconds),
+                        "sidecar_path": common["sidecar_path"],
+                        "sidecar_sha256": _sha256(sidecar_path),
+                    }
+                )
+                _atomic_json(
+                    selection_path,
+                    _selection_manifest(
+                        common,
+                        status="retrying_spawn",
+                        selected_attempt_instance_id=None,
+                        quarantined=quarantined,
+                        spawn_failures=state.failures,
+                        blocking_attempt=None,
+                    ),
+                )
+                spawn_retry_sleep(
+                    TRANSIENT_SPAWN_BACKOFF_SECONDS[state.retry_count]
+                )
+                state.retry_count += 1
+                continue
+
+            return supervised, context
+
     for retry_index in range(MAX_SUSPENDED_RETRIES + 1):
-        attempt_instance_id = uuid.uuid4().hex
-        context = attempt_context(attempt_instance_id)
-        attempt_dir = context["attempt_dir"]
+        supervised, context = _run_one_spawn(state, quarantined)
+        attempt_instance_id = context["common"]["attempt_instance_id"]
         out_path = context["out_path"]
         marker_path = context["marker_path"]
         sidecar_path = context["sidecar_path"]
         common = context["common"]
-        attempt_dir.mkdir(parents=False, exist_ok=False)
-        try:
-            supervised = _run_vina_supervised(
-                context["command"],
-                timeout_seconds,
-                cwd=project_root,
-                temp_dir=attempt_dir,
-            )
-        except BaseException as exc:
-            if isinstance(exc, _SupervisorInfrastructureError):
-                failure_stage = exc.failure_stage
-                win32_error = exc.win32_error
-                cleanup_outcome = exc.cleanup_outcome
-                failure_exit_code = exc.exit_code
-                wall_seconds = exc.wall_seconds
-                unbiased_seconds = exc.unbiased_seconds
-            else:
-                failure_stage = "supervisor_exception"
-                win32_error = None
-                cleanup_outcome = {"exception_type": type(exc).__name__}
-                failure_exit_code = None
-                wall_seconds = None
-                unbiased_seconds = None
-            out_path.unlink(missing_ok=True)
-            _atomic_text(
-                marker_path,
-                f"status=infrastructure_failure\nfailure_stage={failure_stage}\n",
-            )
-            record = _final_record(
-                common,
-                wall_seconds=wall_seconds,
-                unbiased_seconds=unbiased_seconds,
-                disposition_basis="infrastructure_failure",
-                wait_result=WAIT_FAILED,
-                termination_action="TerminateJobObject",
-                timing_ambiguous=False,
-                authoritative_selected=False,
-                status="infrastructure_failure",
-                cause="infrastructure_failure",
-                exit_code=failure_exit_code,
-                output_path=marker_path,
-                project_root=project_root,
-                resumed=False,
-                modes=(),
-                failure_stage=failure_stage,
-                win32_error=win32_error,
-                cleanup_outcome=cleanup_outcome,
-                validate=False,
-            )
-            _atomic_json(sidecar_path, record)
-            _atomic_json(
-                selection_path,
-                _selection_manifest(
-                    common,
-                    status="blocked_infrastructure_failure",
-                    selected_attempt_instance_id=None,
-                    quarantined=quarantined,
-                    blocking_attempt=record,
-                ),
-            )
-            raise InfrastructureError(
-                f"Docking infrastructure failed at {failure_stage}: {exc}",
-                run_record=record,
-            ) from exc
 
         wall_seconds = float(supervised.wall_seconds)
         unbiased_seconds = float(supervised.unbiased_seconds)
@@ -1235,6 +1461,7 @@ def dock_ligand(
             stdout_tail=_tail(supervised.stdout),
             stderr_tail=_tail(supervised.stderr),
             cleanup_outcome=supervised.cleanup_outcome,
+            spawn_failures=state.failures,
         )
         _atomic_json(sidecar_path, record)
 
@@ -1248,6 +1475,7 @@ def dock_ligand(
                     status="halted_quarantine_limit" if halted else "retrying",
                     selected_attempt_instance_id=None,
                     quarantined=quarantined,
+                    spawn_failures=state.failures,
                     blocking_attempt=record if halted else None,
                 ),
             )
@@ -1271,6 +1499,7 @@ def dock_ligand(
                 status="authoritative_selected",
                 selected_attempt_instance_id=attempt_instance_id,
                 quarantined=resolved_quarantines,
+                spawn_failures=state.failures,
                 blocking_attempt=None,
             ),
         )
@@ -1290,6 +1519,7 @@ def build_run_manifest(
     species_catalog_sha256: str,
     attempt_manifest_sha256: str,
     software_versions: Mapping[str, Any],
+    project_root: Path,
     preparation_records: Sequence[Mapping[str, Any]] = (),
     metadata: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -1321,7 +1551,7 @@ def build_run_manifest(
         raise DockingError("A workflow manifest cannot mix timeout bases.")
     if len(supervisor_hashes) > 1:
         raise DockingError("A workflow manifest cannot mix supervisor source revisions.")
-    timeout_qc = build_timeout_qc_report(records)
+    timeout_qc = build_timeout_qc_report(records, project_root=project_root)
     validate_timeout_qc_gate(timeout_qc)
     from spycep_drug_discovery.ligand_preparation import (
         MMFF_MAX_ITERATIONS,
@@ -1364,17 +1594,144 @@ def build_run_manifest(
     }
 
 
+def _spawn_failure_qc_row(
+    failure: Mapping[str, Any],
+    project_root: Path,
+) -> dict[str, Any]:
+    _validate_spawn_failure_entry(failure)
+    sidecar_path = _resolve_project_path(failure["sidecar_path"], project_root)
+    if not sidecar_path.is_file():
+        raise DockingError("Spawn-failure predecessor sidecar is missing.")
+    if _sha256(sidecar_path) != failure["sidecar_sha256"]:
+        raise DockingError("Spawn-failure predecessor sidecar SHA-256 mismatch.")
+    try:
+        sidecar = json.loads(sidecar_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise DockingError("Spawn-failure predecessor sidecar is unreadable.") from exc
+    validate_run_record(sidecar)
+    if sidecar["attempt_instance_id"] != failure["attempt_instance_id"]:
+        raise DockingError("Spawn-failure predecessor attempt ID mismatch.")
+    if sidecar["sidecar_path"] != failure["sidecar_path"]:
+        raise DockingError("Spawn-failure predecessor sidecar path mismatch.")
+    if (int(sidecar["exit_code"]) & 0xFFFFFFFF) != (
+        int(failure["exit_code"]) & 0xFFFFFFFF
+    ):
+        raise DockingError("Spawn-failure predecessor exit code mismatch.")
+    if not math.isclose(
+        float(sidecar["unbiased_seconds"]),
+        float(failure["unbiased_seconds"]),
+        rel_tol=0.0,
+        abs_tol=1e-9,
+    ):
+        raise DockingError("Spawn-failure predecessor duration mismatch.")
+    if sidecar["status"] != "failed" or sidecar["cause"] != "transient_spawn_failure":
+        raise DockingError("Spawn-failure predecessor lacks the transient disposition.")
+    if sidecar["authoritative_selected"] is not False:
+        raise DockingError("Spawn-failure predecessor cannot be authoritative.")
+    supervised = SupervisedResult(
+        disposition_basis=sidecar["disposition_basis"],
+        wait_result=sidecar["wait_result"],
+        termination_action=sidecar["termination_action"],
+        exit_code=sidecar["exit_code"],
+        unbiased_seconds=sidecar["unbiased_seconds"],
+        wall_seconds=sidecar["wall_seconds"],
+        stdout=sidecar.get("stdout_tail", ""),
+        stderr=sidecar.get("stderr_tail", ""),
+    )
+    if not is_transient_spawn_failure(supervised, sidecar["timeout_seconds"]):
+        raise DockingError("Spawn-failure predecessor sidecar is not allowlisted.")
+    return {
+        **dict(failure),
+        "claim_key": sidecar["claim_key"],
+        "status": sidecar["status"],
+        "cause": sidecar["cause"],
+        "disposition_basis": sidecar["disposition_basis"],
+        "wait_result": sidecar["wait_result"],
+        "termination_action": sidecar["termination_action"],
+        "wall_seconds": sidecar["wall_seconds"],
+        "timeout_seconds": sidecar["timeout_seconds"],
+        "stdout_empty": sidecar.get("stdout_tail", "").strip() == "",
+        "stderr_empty": sidecar.get("stderr_tail", "").strip() == "",
+        "suspend_detected": sidecar["suspend_detected"],
+        "timing_ambiguous": sidecar["timing_ambiguous"],
+        "selection_status": "spawn_retry_predecessor",
+    }
+
+
+def _validate_embedded_spawn_failure_qc_row(row: Mapping[str, Any]) -> None:
+    required = {
+        "attempt_instance_id",
+        "exit_code",
+        "unbiased_seconds",
+        "sidecar_path",
+        "sidecar_sha256",
+        "claim_key",
+        "status",
+        "cause",
+        "disposition_basis",
+        "wait_result",
+        "termination_action",
+        "wall_seconds",
+        "timeout_seconds",
+        "stdout_empty",
+        "stderr_empty",
+        "suspend_detected",
+        "timing_ambiguous",
+        "selection_status",
+    }
+    if set(row) != required:
+        raise DockingError("Timeout-QC spawn-failure row fields mismatch.")
+    _validate_spawn_failure_entry({key: row[key] for key in (
+        "attempt_instance_id",
+        "exit_code",
+        "unbiased_seconds",
+        "sidecar_path",
+        "sidecar_sha256",
+    )})
+    if not isinstance(row["claim_key"], str) or not row["claim_key"]:
+        raise DockingError("Timeout-QC spawn-failure row lacks a claim_key.")
+    if row["status"] != "failed" or row["cause"] != "transient_spawn_failure":
+        raise DockingError("Timeout-QC spawn-failure row disposition mismatch.")
+    if row["stdout_empty"] is not True or row["stderr_empty"] is not True:
+        raise DockingError("Timeout-QC spawn-failure row contains process output.")
+    if row["suspend_detected"] is not False or row["timing_ambiguous"] is not False:
+        raise DockingError("Timeout-QC spawn-failure row violates quarantine precedence.")
+    if row["selection_status"] != "spawn_retry_predecessor":
+        raise DockingError("Timeout-QC spawn-failure selection status mismatch.")
+    supervised = SupervisedResult(
+        disposition_basis=str(row["disposition_basis"]),
+        wait_result=int(row["wait_result"]),
+        termination_action=str(row["termination_action"]),
+        exit_code=int(row["exit_code"]),
+        unbiased_seconds=float(row["unbiased_seconds"]),
+        wall_seconds=float(row["wall_seconds"]),
+    )
+    if not is_transient_spawn_failure(supervised, float(row["timeout_seconds"])):
+        raise DockingError("Timeout-QC spawn-failure row is not allowlisted.")
+
+
 def build_timeout_qc_report(
     run_records: Sequence[Mapping[str, Any]],
+    *,
+    project_root: Path,
 ) -> dict[str, Any]:
     """Build the content-addressed QC artifact consumed by the analysis gate."""
     attempts: list[dict[str, Any]] = []
+    spawn_failure_attempts: list[dict[str, Any]] = []
     invalid: list[dict[str, str]] = []
     unresolved_quarantines = 0
     for raw in run_records:
         record = dict(raw)
         try:
             validate_run_record(record)
+            for failure in record["spawn_failures"]:
+                row = _spawn_failure_qc_row(failure, project_root)
+                if row["claim_key"] != record["claim_key"]:
+                    raise DockingError(
+                        "Spawn-failure predecessor claim_key does not match its terminal."
+                    )
+                spawn_failure_attempts.append(row)
+                attempts.append(row)
         except DockingError as exc:
             invalid.append(
                 {
@@ -1390,7 +1747,7 @@ def build_timeout_qc_report(
         if row.get("disposition_basis") == "infrastructure_failure":
             unresolved_quarantines += 1
     payload = {
-        "qc_schema_version": "docking-timeout-qc-v1",
+        "qc_schema_version": "docking-timeout-qc-v2",
         "run_schema_version": RUN_SCHEMA_VERSION,
         "timeout_basis": TIMEOUT_BASIS,
         "timeout_seconds": DEFAULT_TIMEOUT_SECONDS,
@@ -1398,6 +1755,8 @@ def build_timeout_qc_report(
         "suspend_threshold_seconds": SUSPEND_THRESHOLD,
         "max_suspended_retries": MAX_SUSPENDED_RETRIES,
         "attempts": attempts,
+        "spawn_failure_attempts": spawn_failure_attempts,
+        "spawn_failure_attempt_count": len(spawn_failure_attempts),
         "invalid_records": invalid,
         "invalid_record_count": len(invalid),
         "unresolved_quarantine_count": unresolved_quarantines,
@@ -1414,6 +1773,30 @@ def validate_timeout_qc_gate(report: Mapping[str, Any]) -> None:
         raise DockingError("Timeout-QC run schema mismatch.")
     if report.get("timeout_basis") != TIMEOUT_BASIS:
         raise DockingError("Timeout-QC timeout basis mismatch.")
+    if report.get("qc_schema_version") != "docking-timeout-qc-v2":
+        raise DockingError("Timeout-QC schema mismatch.")
+    spawn_failure_attempts = report.get("spawn_failure_attempts")
+    if not isinstance(spawn_failure_attempts, list):
+        raise DockingError("Timeout-QC lacks spawn-failure attempts.")
+    if int(report.get("spawn_failure_attempt_count", -1)) != len(
+        spawn_failure_attempts
+    ):
+        raise DockingError("Timeout-QC spawn-failure count mismatch.")
+    for row in spawn_failure_attempts:
+        if not isinstance(row, Mapping):
+            raise DockingError("Timeout-QC spawn-failure row is not an object.")
+        _validate_embedded_spawn_failure_qc_row(row)
+    attempts = report.get("attempts")
+    if not isinstance(attempts, list):
+        raise DockingError("Timeout-QC attempts must be a list.")
+    embedded_spawn_rows = [
+        row
+        for row in attempts
+        if isinstance(row, Mapping)
+        and row.get("selection_status") == "spawn_retry_predecessor"
+    ]
+    if embedded_spawn_rows != spawn_failure_attempts:
+        raise DockingError("Timeout-QC attempts omit or alter spawn predecessors.")
     if int(report.get("invalid_record_count", -1)) != 0:
         raise DockingError("Timeout-QC gate found invalid records.")
     if int(report.get("unresolved_quarantine_count", -1)) != 0:
@@ -1423,9 +1806,11 @@ def validate_timeout_qc_gate(report: Mapping[str, Any]) -> None:
 def write_timeout_qc_report(
     output_dir: Path,
     run_records: Sequence[Mapping[str, Any]],
+    *,
+    project_root: Path,
 ) -> tuple[Path, dict[str, Any]]:
     """Persist one immutable, content-addressed timeout-QC artifact."""
-    report = build_timeout_qc_report(run_records)
+    report = build_timeout_qc_report(run_records, project_root=project_root)
     validate_timeout_qc_gate(report)
     qc_dir = output_dir / "timeout_qc"
     qc_dir.mkdir(parents=True, exist_ok=True)
@@ -1443,17 +1828,49 @@ def write_timeout_qc_report(
 
 
 def validate_manifest_timeout_qc(manifest: Mapping[str, Any]) -> None:
-    """Analysis entry-point gate for schema-v2 docking manifests."""
+    """Analysis entry-point gate for schema-v3 docking manifests."""
     if manifest.get("run_schema_version") != RUN_SCHEMA_VERSION:
-        raise DockingError("Analysis requires a schema-v2 docking manifest.")
+        raise DockingError("Analysis requires a schema-v3 docking manifest.")
     report = manifest.get("timeout_qc")
     if not isinstance(report, Mapping):
         raise DockingError("Analysis requires the timeout-QC artifact payload.")
     if manifest.get("timeout_qc_sha256") != report.get("report_sha256"):
         raise DockingError("Manifest timeout-QC hash mismatch.")
     validate_timeout_qc_gate(report)
-    for record in manifest.get("run_records", ()):
+    records = manifest.get("run_records", ())
+    expected_spawn_rows: list[dict[str, Any]] = []
+    for record in records:
         validate_run_record(record)
+        expected_spawn_rows.extend(
+            {
+                **dict(failure),
+                "claim_key": record["claim_key"],
+            }
+            for failure in record["spawn_failures"]
+        )
+    actual_spawn_rows = [
+        {
+            **{key: row[key] for key in (
+                "attempt_instance_id",
+                "exit_code",
+                "unbiased_seconds",
+                "sidecar_path",
+                "sidecar_sha256",
+            )},
+            "claim_key": row["claim_key"],
+        }
+        for row in report["spawn_failure_attempts"]
+    ]
+    sort_key = lambda row: (
+        row["claim_key"],
+        row["attempt_instance_id"],
+    )
+    if sorted(expected_spawn_rows, key=sort_key) != sorted(
+        actual_spawn_rows, key=sort_key
+    ):
+        raise DockingError(
+            "Manifest run records and timeout-QC spawn predecessors differ."
+        )
 
 
 def validate_campaign_manifest_set(manifests: Sequence[Mapping[str, Any]]) -> None:
@@ -1494,12 +1911,46 @@ def normalize_command(command: Sequence[str | Path], project_root: Path) -> list
     return normalized
 
 
+def _validate_spawn_failure_entry(entry: Mapping[str, Any]) -> None:
+    required = {
+        "attempt_instance_id",
+        "exit_code",
+        "unbiased_seconds",
+        "sidecar_path",
+        "sidecar_sha256",
+    }
+    if set(entry) != required:
+        raise DockingError(
+            "Spawn-failure predecessor fields do not match the schema."
+        )
+    if not isinstance(entry["attempt_instance_id"], str) or not entry[
+        "attempt_instance_id"
+    ]:
+        raise DockingError("Spawn-failure predecessor lacks an attempt instance ID.")
+    if (
+        not isinstance(entry["exit_code"], int)
+        or isinstance(entry["exit_code"], bool)
+        or (int(entry["exit_code"]) & 0xFFFFFFFF)
+        not in TRANSIENT_SPAWN_STATUS_ALLOWLIST
+    ):
+        raise DockingError("Spawn-failure predecessor exit code is not allowlisted.")
+    unbiased_seconds = _finite_number(
+        entry["unbiased_seconds"], "spawn_failures.unbiased_seconds"
+    )
+    if not 0 <= unbiased_seconds < TRANSIENT_SPAWN_MAX_ELAPSED_SECONDS:
+        raise DockingError("Spawn-failure predecessor duration is outside the limit.")
+    if not isinstance(entry["sidecar_path"], str) or not entry["sidecar_path"]:
+        raise DockingError("Spawn-failure predecessor lacks a sidecar path.")
+    if not re.fullmatch(r"[0-9a-f]{64}", str(entry["sidecar_sha256"])):
+        raise DockingError("Spawn-failure predecessor lacks a valid sidecar SHA-256.")
+
+
 def validate_run_record(
     record: Mapping[str, Any],
     *,
     allow_infrastructure: bool = False,
 ) -> None:
-    """Validate v2 provenance, kernel disposition, and recomputed eligibility."""
+    """Validate v3 provenance, kernel disposition, and recomputed eligibility."""
     missing = RUN_RECORD_REQUIRED_FIELDS - set(record)
     if missing:
         raise DockingError(f"Run record lacks required provenance fields: {sorted(missing)}")
@@ -1539,7 +1990,7 @@ def validate_run_record(
     missing_payload = set(mirrored_fields) - set(payload)
     if missing_payload:
         raise DockingError(
-            f"Run-record fingerprint lacks v2 provenance: {sorted(missing_payload)}"
+            f"Run-record fingerprint lacks v3 provenance: {sorted(missing_payload)}"
         )
     for field in mirrored_fields:
         if payload[field] != record[field]:
@@ -1565,6 +2016,31 @@ def validate_run_record(
         raise DockingError("valid_fit status is internally inconsistent.")
     if record["status"] != "valid_fit" and record["valid_fit"]:
         raise DockingError("Non-fit status is internally inconsistent.")
+
+    spawn_retry_count = record["spawn_retry_count"]
+    if (
+        not isinstance(spawn_retry_count, int)
+        or isinstance(spawn_retry_count, bool)
+        or not 0 <= spawn_retry_count <= MAX_TRANSIENT_SPAWN_RETRIES
+    ):
+        raise DockingError("spawn_retry_count is outside the frozen retry budget.")
+    spawn_failures = record["spawn_failures"]
+    if not isinstance(spawn_failures, list):
+        raise DockingError("spawn_failures must be a list.")
+    if spawn_retry_count != len(spawn_failures):
+        raise DockingError("spawn_retry_count does not match spawn_failures.")
+    predecessor_ids: set[str] = set()
+    predecessor_sidecars: set[str] = set()
+    for failure in spawn_failures:
+        if not isinstance(failure, Mapping):
+            raise DockingError("spawn_failures entries must be objects.")
+        _validate_spawn_failure_entry(failure)
+        attempt_instance_id = str(failure["attempt_instance_id"])
+        sidecar_path = str(failure["sidecar_path"])
+        if attempt_instance_id in predecessor_ids or sidecar_path in predecessor_sidecars:
+            raise DockingError("spawn_failures contains a duplicate predecessor.")
+        predecessor_ids.add(attempt_instance_id)
+        predecessor_sidecars.add(sidecar_path)
 
     disposition = record["disposition_basis"]
     if disposition not in {
@@ -1597,7 +2073,7 @@ def validate_run_record(
     if min(wall_seconds, unbiased_seconds, elapsed_seconds) < 0:
         raise DockingError("Scientific record durations must be non-negative.")
     if not math.isclose(elapsed_seconds, wall_seconds, rel_tol=0.0, abs_tol=1e-9):
-        raise DockingError("elapsed_seconds must equal wall_seconds in schema v2.")
+        raise DockingError("elapsed_seconds must equal wall_seconds in schema v3.")
     recomputed_gap = wall_seconds - unbiased_seconds
     persisted_gap = _finite_number(record["suspend_gap_seconds"], "suspend_gap_seconds")
     if not math.isclose(persisted_gap, recomputed_gap, rel_tol=0.0, abs_tol=1e-9):
@@ -1720,6 +2196,7 @@ def _final_record(
     failure_stage: str | None = None,
     win32_error: int | None = None,
     cleanup_outcome: Mapping[str, Any] | None = None,
+    spawn_failures: Sequence[Mapping[str, Any]] = (),
     validate: bool = True,
 ) -> dict[str, Any]:
     suspend_gap_seconds = (
@@ -1754,6 +2231,8 @@ def _final_record(
         "win32_error": win32_error,
         "cleanup_outcome": dict(cleanup_outcome or {}),
         "modes": [dict(mode) for mode in modes],
+        "spawn_retry_count": len(spawn_failures),
+        "spawn_failures": [dict(failure) for failure in spawn_failures],
     }
     if modes:
         record.update(summarize_docking(modes))
@@ -1776,16 +2255,18 @@ def _selection_manifest(
     status: str,
     selected_attempt_instance_id: str | None,
     quarantined: Sequence[Mapping[str, Any]],
+    spawn_failures: Sequence[Mapping[str, Any]],
     blocking_attempt: Mapping[str, Any] | None,
 ) -> dict[str, Any]:
     return {
-        "selection_schema_version": "docking-selection-manifest-v1",
+        "selection_schema_version": "docking-selection-manifest-v2",
         "run_schema_version": RUN_SCHEMA_VERSION,
         "campaign_id": common["campaign_id"],
         "claim_key": common["claim_key"],
         "status": status,
         "selected_attempt_instance_id": selected_attempt_instance_id,
         "quarantined_attempts": [dict(row) for row in quarantined],
+        "spawn_failure_attempts": [dict(row) for row in spawn_failures],
         "blocking_attempt_instance_id": (
             blocking_attempt.get("attempt_instance_id") if blocking_attempt else None
         ),
@@ -1831,7 +2312,7 @@ def require_campaign_id(value: str | None = None) -> str:
     """Require an explicit immutable campaign identifier at workflow entry points."""
     campaign_id = str(value or os.environ.get("SPYCEP_CAMPAIGN_ID", ""))
     if not campaign_id:
-        raise DockingError("Set SPYCEP_CAMPAIGN_ID for a new isolated v2 campaign.")
+        raise DockingError("Set SPYCEP_CAMPAIGN_ID for a new isolated v3 campaign.")
     if _filename_component(campaign_id) != campaign_id:
         raise DockingError("SPYCEP_CAMPAIGN_ID must be a safe path component.")
     return campaign_id
@@ -1889,6 +2370,282 @@ def campaign_output_dir(project_root: Path, campaign_id: str, workflow: str) -> 
     """Return the shared no-reuse campaign root after validating the workflow key."""
     _filename_component(workflow)
     return project_root / DOCKING_OUTPUT_DIR / f"campaign_{_filename_component(campaign_id)}"
+
+
+def _campaign_operational_dir(project_root: Path, campaign_id: str) -> Path:
+    return campaign_output_dir(project_root, campaign_id, "operational") / "_operational"
+
+
+def _spawn_retry_ledger_dir(project_root: Path, campaign_id: str) -> Path:
+    return _campaign_operational_dir(project_root, campaign_id) / "spawn_retry"
+
+
+def _spawn_retry_ledger_filename(claim_key: str) -> str:
+    return hashlib.sha256(claim_key.encode("utf-8")).hexdigest() + ".json"
+
+
+def _read_spawn_retry_ledger(
+    project_root: Path,
+    campaign_id: str,
+) -> list[dict[str, Any]]:
+    ledger_dir = _spawn_retry_ledger_dir(project_root, campaign_id)
+    if not ledger_dir.is_dir():
+        raise _SpawnRetryLedgerError(
+            "The campaign spawn-retry ledger directory is absent or invalid.",
+            failure_stage="spawn_retry_ledger_corrupt",
+        )
+    try:
+        paths = sorted(ledger_dir.iterdir(), key=lambda path: path.name)
+    except OSError as exc:
+        raise _SpawnRetryLedgerError(
+            f"Could not enumerate the campaign spawn-retry ledger: {exc}",
+            failure_stage="spawn_retry_ledger_io",
+        ) from exc
+    entries: list[dict[str, Any]] = []
+    claim_keys: set[str] = set()
+    required_fields = {"ledger_schema_version", "campaign_id", "claim_key"}
+    for path in paths:
+        if not path.is_file() or path.suffix != ".json":
+            raise _SpawnRetryLedgerError(
+                f"Unexpected spawn-retry ledger entry: {path.name}",
+                failure_stage="spawn_retry_ledger_corrupt",
+            )
+        try:
+            entry = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise _SpawnRetryLedgerError(
+                f"Unreadable spawn-retry ledger entry: {path.name}",
+                failure_stage="spawn_retry_ledger_corrupt",
+            ) from exc
+        if not isinstance(entry, dict) or set(entry) != required_fields:
+            raise _SpawnRetryLedgerError(
+                f"Spawn-retry ledger entry schema mismatch: {path.name}",
+                failure_stage="spawn_retry_ledger_corrupt",
+            )
+        if entry["ledger_schema_version"] != SPAWN_RETRY_LEDGER_SCHEMA_VERSION:
+            raise _SpawnRetryLedgerError(
+                f"Spawn-retry ledger schema mismatch: {path.name}",
+                failure_stage="spawn_retry_ledger_corrupt",
+            )
+        if entry["campaign_id"] != campaign_id:
+            raise _SpawnRetryLedgerError(
+                f"Spawn-retry ledger campaign mismatch: {path.name}",
+                failure_stage="spawn_retry_ledger_corrupt",
+            )
+        claim_key = entry["claim_key"]
+        if not isinstance(claim_key, str) or not claim_key:
+            raise _SpawnRetryLedgerError(
+                f"Spawn-retry ledger claim_key is invalid: {path.name}",
+                failure_stage="spawn_retry_ledger_corrupt",
+            )
+        if path.name != _spawn_retry_ledger_filename(claim_key):
+            raise _SpawnRetryLedgerError(
+                f"Spawn-retry ledger filename/hash mismatch: {path.name}",
+                failure_stage="spawn_retry_ledger_corrupt",
+            )
+        if claim_key in claim_keys:
+            raise _SpawnRetryLedgerError(
+                f"Duplicate spawn-retry ledger claim_key: {claim_key}",
+                failure_stage="spawn_retry_ledger_corrupt",
+            )
+        claim_keys.add(claim_key)
+        entries.append(entry)
+    if len(entries) > CAMPAIGN_TRANSIENT_SPAWN_BUDGET:
+        raise _SpawnRetryLedgerError(
+            "The campaign spawn-retry ledger exceeds the frozen host-degradation budget.",
+            failure_stage="campaign_transient_spawn_budget_exceeded",
+        )
+    return sorted(entries, key=lambda entry: entry["claim_key"])
+
+
+def initialize_spawn_retry_ledger(project_root: Path, campaign_id: str) -> Path:
+    """Create the canonical empty ledger once; later absence is corruption."""
+    campaign_root = campaign_output_dir(project_root, campaign_id, "operational")
+    ledger_dir = _spawn_retry_ledger_dir(project_root, campaign_id)
+    if not campaign_root.exists():
+        try:
+            ledger_dir.mkdir(parents=True, exist_ok=False)
+        except OSError as exc:
+            raise _SpawnRetryLedgerError(
+                f"Could not initialize the campaign spawn-retry ledger: {exc}",
+                failure_stage="spawn_retry_ledger_io",
+            ) from exc
+    elif not ledger_dir.is_dir():
+        raise _SpawnRetryLedgerError(
+            "Existing campaign root lacks its spawn-retry ledger directory.",
+            failure_stage="spawn_retry_ledger_corrupt",
+        )
+    _read_spawn_retry_ledger(project_root, campaign_id)
+    return ledger_dir
+
+
+def _register_spawn_retry_claim(
+    project_root: Path,
+    campaign_id: str,
+    claim_key: str,
+) -> dict[str, Any]:
+    """Exclusively register the first retry for one claim under the campaign lock."""
+    entries = _read_spawn_retry_ledger(project_root, campaign_id)
+    if any(entry["claim_key"] == claim_key for entry in entries):
+        raise _SpawnRetryLedgerError(
+            f"Duplicate spawn-retry ledger registration for {claim_key}.",
+            failure_stage="spawn_retry_ledger_duplicate",
+        )
+    if len(entries) >= CAMPAIGN_TRANSIENT_SPAWN_BUDGET:
+        raise _SpawnRetryLedgerError(
+            "Transient spawn failures reached the frozen per-campaign budget; "
+            "the host is degrading and the campaign is aborted.",
+            failure_stage="campaign_transient_spawn_budget_exceeded",
+        )
+    entry = {
+        "ledger_schema_version": SPAWN_RETRY_LEDGER_SCHEMA_VERSION,
+        "campaign_id": campaign_id,
+        "claim_key": claim_key,
+    }
+    path = _spawn_retry_ledger_dir(project_root, campaign_id) / (
+        _spawn_retry_ledger_filename(claim_key)
+    )
+    try:
+        _exclusive_json(path, entry)
+    except FileExistsError as exc:
+        raise _SpawnRetryLedgerError(
+            f"Spawn-retry ledger entry already exists for {claim_key}.",
+            failure_stage="spawn_retry_ledger_duplicate",
+        ) from exc
+    except OSError as exc:
+        raise _SpawnRetryLedgerError(
+            f"Could not write the spawn-retry ledger entry for {claim_key}: {exc}",
+            failure_stage="spawn_retry_ledger_io",
+        ) from exc
+    verified = _read_spawn_retry_ledger(project_root, campaign_id)
+    if len(verified) != len(entries) + 1 or entry not in verified:
+        raise _SpawnRetryLedgerError(
+            "Spawn-retry ledger did not verify after exclusive creation.",
+            failure_stage="spawn_retry_ledger_corrupt",
+        )
+    return entry
+
+
+def spawn_retry_ledger_content_sha256(project_root: Path, campaign_id: str) -> str:
+    """Hash canonical ledger entries sorted by their full, unsanitized claim_key."""
+    entries = _read_spawn_retry_ledger(project_root, campaign_id)
+    return _canonical_json_sha256(entries)
+
+
+def require_unsealed(project_root: Path, campaign_id: str) -> None:
+    """Refuse a docking stage after the campaign completion barrier is sealed."""
+    seal_path = _campaign_operational_dir(project_root, campaign_id) / "SEALED.json"
+    if seal_path.exists():
+        raise InfrastructureError(
+            f"Campaign {campaign_id} is sealed and cannot accept docking writes."
+        )
+
+
+def seal_campaign(
+    project_root: Path,
+    campaign_id: str,
+    stage_manifest_paths: Sequence[Path],
+) -> dict[str, Any]:
+    """Validate all four stages and exclusively create the campaign barrier seal."""
+    with campaign_lock(project_root, campaign_id):
+        seal_path = _campaign_operational_dir(project_root, campaign_id) / "SEALED.json"
+        if seal_path.exists():
+            raise InfrastructureError(f"Campaign {campaign_id} is already sealed.")
+        if len(stage_manifest_paths) != 4:
+            raise InfrastructureError("Campaign sealing requires exactly four stage manifests.")
+        manifests: list[dict[str, Any]] = []
+        for raw_path in stage_manifest_paths:
+            path = _resolve_project_path(raw_path, project_root)
+            try:
+                manifest = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                raise InfrastructureError(
+                    f"Campaign stage manifest is unreadable: {path}"
+                ) from exc
+            manifests.append(manifest)
+        validate_campaign_manifest_set(manifests)
+        workflows = [manifest.get("workflow") for manifest in manifests]
+        if len(set(workflows)) != 4 or set(workflows) != {
+            "wide",
+            "tight",
+            "speb",
+            "boron",
+        }:
+            raise InfrastructureError(
+                "Campaign sealing requires one WIDE, TIGHT, SpeB, and BORON manifest."
+            )
+        if any(manifest.get("campaign_id") != campaign_id for manifest in manifests):
+            raise InfrastructureError("Campaign stage manifest ID does not match the seal.")
+
+        ledger_entries = _read_spawn_retry_ledger(project_root, campaign_id)
+        ledger_claim_keys = {entry["claim_key"] for entry in ledger_entries}
+        manifest_claim_keys = {
+            record["claim_key"]
+            for manifest in manifests
+            for record in manifest["run_records"]
+            if int(record["spawn_retry_count"]) > 0
+        }
+        if ledger_claim_keys != manifest_claim_keys:
+            raise InfrastructureError(
+                "Campaign seal refused: spawn-retry ledger and terminal manifests differ."
+            )
+        ledger_hash = _canonical_json_sha256(ledger_entries)
+        seal = {
+            "seal_schema_version": CAMPAIGN_SEAL_SCHEMA_VERSION,
+            "run_schema_version": RUN_SCHEMA_VERSION,
+            "ledger_schema_version": SPAWN_RETRY_LEDGER_SCHEMA_VERSION,
+            "campaign_id": campaign_id,
+            "ledger_content_sha256": ledger_hash,
+            "spawn_retry_claim_count": len(ledger_entries),
+            "stage_workflows": sorted(workflows),
+        }
+        try:
+            _exclusive_json(seal_path, seal)
+        except FileExistsError as exc:
+            raise InfrastructureError(
+                f"Campaign {campaign_id} was sealed concurrently."
+            ) from exc
+        except OSError as exc:
+            raise InfrastructureError("Could not create the campaign seal.") from exc
+        return seal
+
+
+def require_campaign_seal(project_root: Path, campaign_id: str) -> dict[str, Any]:
+    """Require an immutable seal whose ledger hash still matches canonical content."""
+    seal_path = _campaign_operational_dir(project_root, campaign_id) / "SEALED.json"
+    try:
+        seal = json.loads(seal_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise InfrastructureError(
+            f"Campaign {campaign_id} lacks a readable completion seal."
+        ) from exc
+    required_fields = {
+        "seal_schema_version",
+        "run_schema_version",
+        "ledger_schema_version",
+        "campaign_id",
+        "ledger_content_sha256",
+        "spawn_retry_claim_count",
+        "stage_workflows",
+    }
+    if not isinstance(seal, dict) or set(seal) != required_fields:
+        raise InfrastructureError("Campaign completion seal schema mismatch.")
+    if seal["seal_schema_version"] != CAMPAIGN_SEAL_SCHEMA_VERSION:
+        raise InfrastructureError("Campaign completion seal version mismatch.")
+    if seal["run_schema_version"] != RUN_SCHEMA_VERSION:
+        raise InfrastructureError("Campaign completion seal run-schema mismatch.")
+    if seal["ledger_schema_version"] != SPAWN_RETRY_LEDGER_SCHEMA_VERSION:
+        raise InfrastructureError("Campaign completion seal ledger-schema mismatch.")
+    if seal["campaign_id"] != campaign_id:
+        raise InfrastructureError("Campaign completion seal ID mismatch.")
+    if seal["stage_workflows"] != ["boron", "speb", "tight", "wide"]:
+        raise InfrastructureError("Campaign completion seal workflow set mismatch.")
+    ledger_entries = _read_spawn_retry_ledger(project_root, campaign_id)
+    if seal["spawn_retry_claim_count"] != len(ledger_entries):
+        raise InfrastructureError("Campaign completion seal ledger count mismatch.")
+    if seal["ledger_content_sha256"] != _canonical_json_sha256(ledger_entries):
+        raise InfrastructureError("Campaign completion seal ledger hash mismatch.")
+    return seal
 
 
 @contextmanager
@@ -1962,6 +2719,21 @@ def _atomic_json(path: Path, value: Mapping[str, Any]) -> None:
     os.replace(temporary, path)
 
 
+def _exclusive_json(path: Path, value: Mapping[str, Any]) -> None:
+    descriptor = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    try:
+        payload = (json.dumps(value, indent=2) + "\n").encode("utf-8")
+        offset = 0
+        while offset < len(payload):
+            written = os.write(descriptor, payload[offset:])
+            if written <= 0:
+                raise OSError("Exclusive JSON write made no progress.")
+            offset += written
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
 def _filename_component(value: str) -> str:
     cleaned = re.sub(r"[^A-Za-z0-9_.-]+", "_", value).strip("._")
     if not cleaned:
@@ -1985,7 +2757,7 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _json_sha256(value: Mapping[str, Any]) -> str:
+def _canonical_json_sha256(value: Any) -> str:
     payload = json.dumps(
         value,
         sort_keys=True,
@@ -1993,6 +2765,10 @@ def _json_sha256(value: Mapping[str, Any]) -> str:
         ensure_ascii=True,
     ).encode("utf-8")
     return hashlib.sha256(payload).hexdigest()
+
+
+def _json_sha256(value: Mapping[str, Any]) -> str:
+    return _canonical_json_sha256(value)
 
 
 def _relative_path(path: Path, project_root: Path) -> str:

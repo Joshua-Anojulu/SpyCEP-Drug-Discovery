@@ -381,3 +381,44 @@ resume across runs. Proves less than a naive 'just retry on nonzero' would claim
 Awaiting Josh's sign-off. No code written during either act. Act 3 (build) begins only after sign-off.
 Codex noted two implementation-time test requirements (zero-retry seal; stage/sealer lock race) — verification
 items for the build, not design blockers.
+
+---
+
+# Act 3 — Build (Codex types, Claude verifies)
+
+## Round 1 — Codex build (`gpt-5.6-sol`, `--yolo`, user-authorized)
+_Isolation checkpoint `50bacb0`, clean tree. SPEC=PLAN-retry-fix.md rev 6. Pre-build baseline: 232 passed._
+
+**Codex report:** implemented rev 6; **deviations: none**. Changed docking.py (classifier, SpawnRetryState, helper,
+predecessors, schema v3, QC, ledger, seal APIs), the 3 entry points (locked require_unsealed), new
+scripts/seal_docking_campaign.py, compute_statistics/make_figures/write_docking_methods (downstream seal gates),
+run_campaign.sh (seal step), ADR-0003, PROJECT_CONTEXT.md (domain language), and tests
+(test_docking_timeout v2→v3 literal, test_environment fixture spawn fields, new test_docking_spawn_retry.py +
+test_campaign_seal.py).
+
+### Claude's verdict — VERIFIED, no fix round needed
+Verified independently (not trusting Codex's claims):
+- **Scope:** only expected files. The three extra (make_figures, write_docking_methods, PROJECT_CONTEXT) are
+  plan-faithful — §10a "all downstream entry points require+validate the seal" and the §Domain-language addition.
+- **Hard constraints all hold.** `validate_suspend_calibration` / `docking-suspend-calibration-v1`: **0 diff lines**
+  (Josh's Act-1 constraint held). **Nothing under `results/`**; the three dead/archive roots present and the ADR-0001
+  `29287` sidecar byte-intact. Frozen params (seed/exh/timeout/num_modes/cpu) untouched. `HEAD` still Claude's commit —
+  **no git ops by Codex**.
+- **The five danger points, verified in source:** (1) `TRANSIENT_SPAWN_STATUS_ALLOWLIST = frozenset({0xC0000142})` —
+  allowlist, not a range (the integrity-hole fix); (2) `@dataclass class SpawnRetryState` — mutable, not a bare int;
+  (3) exhaustion checked **before** any predecessor write (`if is_transient…: if state.retry_count >= MAX: <infra
+  terminal>`); (4) `validate_run_record(record, allow_infrastructure=True)` + `failure_stage=
+  "transient_spawn_failure_exhausted"`, cause `"infrastructure_failure"`; (5) ledger `sha256(claim_key)+".json"`, and
+  `with campaign_lock(...): require_unsealed(...); _run_campaign(...)` — seal-check **inside** the lock (TOCTOU closed).
+- **Suspend-retry byte-equivalence:** `quarantine_reason` / `authoritative_selected = quarantine_reason is None` /
+  `halted_quarantine_limit` boundary / `quarantined_predecessors` all intact; the only diff in that region is the new
+  infra-terminal `authoritative_selected=False` writes and the cumulative-history threading. The 7-round timeout-fix
+  behavior is preserved.
+- **Proof (run by Claude):** `pytest tests -q` → **261 passed, 0 failed, 0 skipped** (baseline 232 → +29). The 29 new
+  tests map 1:1 to the review's load-bearing findings: cumulative-budget-across-suspend-iterations (the int-immutability
+  fix), non-allowlisted-instant-crash-is-fatal (the integrity floor), exhaustion-never-overwrites-predecessors, the
+  ≤6-supervisor-call ceiling, both-histories-through-interleave, sha256 colon-claim_key filename, corrupt-ledger
+  fail-closed, zero-retry empty-ledger seal, and stage/sealer lock race.
+
+**Deferred, correctly not built:** running the campaign, the live calibration, and the desktop-heap root-cause
+(evidence-gated). Rounds used: 0 of 2.

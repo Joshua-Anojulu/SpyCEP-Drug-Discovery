@@ -5,7 +5,7 @@ set -u
 PY=./.venv/Scripts/python.exe
 LOCKDIR=.campaign.lock
 
-# The schema-v2 entry points refuse to start without BOTH of these. Require them from
+# The schema-v3 entry points refuse to start without BOTH of these. Require them from
 # the environment rather than hardcoding: an ID baked into this script gets silently
 # reused on the next run, and PLAN-timeout-fix.md §H17 forbids cross-campaign reuse.
 #   SPYCEP_CAMPAIGN_ID=v2_20260716 \
@@ -66,4 +66,5 @@ run_stage "[1/4] WIDE (154 attempts)"  $PY scripts/run_docking.py
 run_stage "[2/4] TIGHT (154 attempts)" $PY scripts/run_docking.py --tight
 run_stage "[3/4] SPEB (23 attempts)"   $PY scripts/run_speb_positive_control.py
 run_stage "[4/4] BORON (8 attempts)"   $PY scripts/dock_boron_surrogates.py
+run_stage "[SEAL] CAMPAIGN BARRIER"    $PY scripts/seal_docking_campaign.py
 echo "=== STAGE 2 CAMPAIGN DONE: $(date) ==="

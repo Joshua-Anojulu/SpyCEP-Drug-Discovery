@@ -23,6 +23,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from spycep_drug_discovery.docking import (
+    require_campaign_seal,
     validate_campaign_manifest_set,
     validate_manifest_timeout_qc,
 )
@@ -110,11 +111,16 @@ def main() -> None:
     wide = _manifest(METHODS / "docking_result.json")
     tight = _manifest(METHODS / "docking_result_tight.json")
     speb = _manifest(METHODS / "speb_positive_control_result.json")
-    validate_campaign_manifest_set((wide, tight, speb))
+    boron = _manifest(METHODS / "boron_surrogate_result.json")
+    validate_campaign_manifest_set((wide, tight, speb, boron))
+    seal = require_campaign_seal(PROJECT_ROOT, str(wide["campaign_id"]))
     decoys = [r for r in speb["results"] if r["role"] == "decoy"]
     positive = next(r for r in speb["results"] if r["role"] == "positive_known_inhibitor")
 
     stats = {
+        "campaign_id": wide["campaign_id"],
+        "campaign_seal_schema_version": seal["seal_schema_version"],
+        "campaign_ledger_content_sha256": seal["ledger_content_sha256"],
         "note": (
             "More negative affinity/efficiency = stronger. Bootstrap = 95% CI, 10000 resamples, seed 42. "
             "Ligands are docked as their dominant microspecies at pH 7.4."
