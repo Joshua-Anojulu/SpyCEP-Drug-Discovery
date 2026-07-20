@@ -1,39 +1,42 @@
 {
+  "campaign_id": "v2_20260719",
+  "campaign_seal_schema_version": "docking-campaign-seal-v1",
+  "campaign_ledger_content_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "note": "More negative affinity/efficiency = stronger. Bootstrap = 95% CI, 10000 resamples, seed 42. Ligands are docked as their dominant microspecies at pH 7.4.",
   "custom_vs_fda_wide_box": {
     "non_fits_excluded": [],
     "best_affinity": {
       "custom_n": 18,
-      "fda_n": 55,
-      "custom_mean": -5.889055555555555,
-      "fda_mean": -6.1014,
+      "fda_n": 58,
+      "custom_mean": -5.828833333333333,
+      "fda_mean": -6.171827586206897,
       "bootstrap_mean_difference_custom_minus_fda": {
-        "observed_difference": 0.21234444444444467,
-        "ci95_low": -0.33351267676767676,
-        "ci95_high": 0.7188513888888864,
+        "observed_difference": 0.3429942528735621,
+        "ci95_low": -0.16430584291187814,
+        "ci95_high": 0.8292186781609193,
         "n_resamples": 10000,
         "excludes_zero": false
       },
       "mann_whitney": {
-        "u_statistic": 573.0,
-        "p_value": 0.3212526291928067
+        "u_statistic": 630.0,
+        "p_value": 0.18903859096917164
       }
     },
     "ligand_efficiency": {
       "custom_n": 18,
-      "fda_n": 55,
-      "custom_mean": -0.30094596019536524,
-      "fda_mean": -0.264233822910331,
+      "fda_n": 58,
+      "custom_mean": -0.29966043424289857,
+      "fda_mean": -0.2683821619230282,
       "bootstrap_mean_difference_custom_minus_fda": {
-        "observed_difference": -0.03671213728503425,
-        "ci95_low": -0.09348748293676674,
-        "ci95_high": 0.017292228191504413,
+        "observed_difference": -0.03127827231987035,
+        "ci95_low": -0.08959502826987306,
+        "ci95_high": 0.022121433015669895,
         "n_resamples": 10000,
         "excludes_zero": false
       },
       "mann_whitney": {
-        "u_statistic": 453.0,
-        "p_value": 0.5953249423319567
+        "u_statistic": 487.0,
+        "p_value": 0.6733761970903693
       }
     }
   },
@@ -41,55 +44,55 @@
     "non_fits_excluded": [],
     "best_affinity": {
       "custom_n": 18,
-      "fda_n": 54,
-      "custom_mean": -5.635555555555555,
-      "fda_mean": -5.931537037037037,
+      "fda_n": 58,
+      "custom_mean": -5.5945,
+      "fda_mean": -5.9448965517241374,
       "bootstrap_mean_difference_custom_minus_fda": {
-        "observed_difference": 0.2959814814814816,
-        "ci95_low": -0.15612268518518735,
-        "ci95_high": 0.7411509259259248,
+        "observed_difference": 0.3503965517241374,
+        "ci95_low": -0.09671470306513522,
+        "ci95_high": 0.7825084291187736,
         "n_resamples": 10000,
         "excludes_zero": false
       },
       "mann_whitney": {
-        "u_statistic": 572.5,
-        "p_value": 0.2633914273658057
+        "u_statistic": 645.0,
+        "p_value": 0.13447461877094713
       }
     },
     "ligand_efficiency": {
       "custom_n": 18,
-      "fda_n": 54,
-      "custom_mean": -0.28959567943948716,
-      "fda_mean": -0.2617970530270903,
+      "fda_n": 58,
+      "custom_mean": -0.28865566941886406,
+      "fda_mean": -0.2608667921901474,
       "bootstrap_mean_difference_custom_minus_fda": {
-        "observed_difference": -0.027798626412396887,
-        "ci95_low": -0.08259501353036301,
-        "ci95_high": 0.023933006632544288,
+        "observed_difference": -0.02778887722871659,
+        "ci95_low": -0.08385323342062671,
+        "ci95_high": 0.023548564092849014,
         "n_resamples": 10000,
         "excludes_zero": false
       },
       "mann_whitney": {
-        "u_statistic": 438.0,
-        "p_value": 0.5367617945706332
+        "u_statistic": 473.0,
+        "p_value": 0.5534716199959144
       }
     }
   },
   "triad_engagement_wide_box": {
-    "ligands": 73,
-    "contacting_at_least_one_triad_residue": 73,
+    "ligands": 72,
+    "contacting_at_least_one_triad_residue": 72,
     "contacting_at_least_two_triad_residues": 64,
-    "contacting_all_three_triad_residues": 42,
+    "contacting_all_three_triad_residues": 41,
     "counted_over": "ligands (best receptor), not ligand x receptor pose rows"
   },
   "triad_engagement_tight_box": {
     "ligands": 72,
     "contacting_at_least_one_triad_residue": 72,
-    "contacting_at_least_two_triad_residues": 66,
-    "contacting_all_three_triad_residues": 47,
+    "contacting_at_least_two_triad_residues": 67,
+    "contacting_all_three_triad_residues": 44,
     "counted_over": "ligands (best receptor), not ligand x receptor pose rows"
   },
   "speb_positive_control": {
-    "decoy_count": 17,
+    "decoy_count": 20,
     "decoys_are_size_matched": true,
     "positive_heavy_atom_count": 25,
     "decoy_heavy_atom_range": [
@@ -97,21 +100,21 @@
       28
     ],
     "by_best_affinity": {
-      "positive_affinity": -6.695,
-      "best_decoy_affinity": -6.918,
-      "margin_to_best_decoy": -0.22299999999999986,
-      "decoy_mean": -6.295705882352941,
-      "decoy_sd": 0.4961705559464763,
-      "sd_stronger_than_decoy_mean": 0.8047517388156599,
+      "positive_affinity": -6.806,
+      "best_decoy_affinity": -7.037,
+      "margin_to_best_decoy": -0.23099999999999987,
+      "decoy_mean": -6.3178,
+      "decoy_sd": 0.5757801663829695,
+      "sd_stronger_than_decoy_mean": 0.8478930475616328,
       "beats_all_decoys": false
     },
     "by_ligand_efficiency": {
-      "positive_affinity": -0.26780000000000004,
-      "best_decoy_affinity": -0.28295652173913044,
-      "margin_to_best_decoy": -0.015156521739130402,
-      "decoy_mean": -0.25436850078783585,
-      "decoy_sd": 0.026174887280236668,
-      "sd_stronger_than_decoy_mean": 0.5131444910674222,
+      "positive_affinity": -0.27224,
+      "best_decoy_affinity": -0.285304347826087,
+      "margin_to_best_decoy": -0.013064347826087008,
+      "decoy_mean": -0.25611556604345737,
+      "decoy_sd": 0.029163107672957166,
+      "sd_stronger_than_decoy_mean": 0.5529052026061935,
       "beats_all_decoys": false
     },
     "passes_on_both_metrics": false

@@ -88,7 +88,7 @@ def _triad_engagement(result_path: Path) -> dict:
     manifest = _manifest(result_path)
     by_ligand: dict[str, list[dict]] = {}
     for row in manifest["pose_interactions"]:
-        by_ligand.setdefault(row["ligand_id"], []).append(row)
+        by_ligand.setdefault(row["entity_id"], []).append(row)
 
     def _contacting(minimum: int) -> int:
         return sum(
