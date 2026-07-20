@@ -1,7 +1,4 @@
-"""Generate the tracked docking methods/results note from tracked manifests.
-
-Writes docs/methods/docking_analysis.md. Numbers are read from the tracked result
-manifests so the note cannot drift from the data.
+"""Generate the tracked docking methods/results note from validated manifests.
 
 Run:
     .\\.venv\\Scripts\\python.exe scripts\\write_docking_methods.py
@@ -11,11 +8,17 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from statistics import mean
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
+from spycep_drug_discovery.analysis_population import (
+    AFFINITY,
+    EFFICIENCY,
+    load_analysis_population,
+    numeric_ranking_rows,
+    verify_statistics_document,
+)
 from spycep_drug_discovery.docking import (
     DockingError,
     require_campaign_seal,
@@ -23,64 +26,99 @@ from spycep_drug_discovery.docking import (
 )
 
 METHODS = PROJECT_ROOT / "docs" / "methods"
-WIDE = METHODS / "docking_result.json"
-TIGHT = METHODS / "docking_result_tight.json"
-BORON = METHODS / "boron_surrogate_result.json"
-SPEB = METHODS / "speb_positive_control_result.json"
 STATS = METHODS / "docking_statistics.json"
 OUTPUT = METHODS / "docking_analysis.md"
 
-AFFINITY = "ensemble_best_affinity_kcal_mol"
-EFFICIENCY = "ligand_efficiency_kcal_mol_per_heavy_atom"
+
+def _load_json(name: str) -> dict:
+    return json.loads((METHODS / name).read_text(encoding="utf-8"))
 
 
-def _set_stats(result: dict) -> dict:
-    ranking = [r for r in result["ranking"] if r[AFFINITY] < 0]
-    cu = [r for r in ranking if r["set"] == "custom_anti_virulence"]
-    fd = [r for r in ranking if r["set"] == "fda_comparator"]
-    return {
-        "custom_n": len(cu),
-        "fda_n": len(fd),
-        "custom_best": mean(r[AFFINITY] for r in cu),
-        "fda_best": mean(r[AFFINITY] for r in fd),
-        "custom_le": mean(r[EFFICIENCY] for r in cu),
-        "fda_le": mean(r[EFFICIENCY] for r in fd),
-        "range": (min(r[AFFINITY] for r in ranking), max(r[AFFINITY] for r in ranking)),
+def _stats(population) -> dict:
+    stats = json.loads(STATS.read_text(encoding="utf-8"))
+    verify_statistics_document(stats, population)
+    return stats
+
+
+def _top_rows(manifest: dict, population, n: int = 10) -> list[str]:
+    lines = [
+        "| Rank | Ligand | Set | Charge | Ligand efficiency | Best (kcal/mol) |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]
+    charges = {
+        tuple(row["species_key"]): int(row["formal_charge"])
+        for row in manifest.get("ligand_preparation", [])
     }
-
-
-def _top_rows(result: dict, n: int = 10) -> list[str]:
-    lines = ["| Rank | Ligand | Set | Charge | Ligand efficiency | Best (kcal/mol) |",
-             "| --- | --- | --- | --- | --- | --- |"]
-    charges = {r["ligand_id"]: r["formal_charge"] for r in result.get("ligand_preparation", [])}
-    for r in [row for row in result["ranking"] if row[AFFINITY] < 0][:n]:
-        s = "custom" if r["set"] == "custom_anti_virulence" else "FDA"
-        q = charges.get(r["ligand_id"])
+    ranked = sorted(numeric_ranking_rows(manifest, population), key=lambda row: (row[EFFICIENCY], row["entity_id"]))
+    for rank, row in enumerate(ranked[:n], start=1):
+        label = "custom" if row["set"] == "custom_anti_virulence" else "FDA"
+        charge = charges[tuple(row["species_key"])]
         lines.append(
-            f"| {r['rank']} | {r['ligand_id']} | {s} | {q:+d} | "
-            f"{r[EFFICIENCY]:.3f} | {r[AFFINITY]:.2f} |"
+            f"| {rank} | {row['ligand_id']} | {label} | {charge:+d} | "
+            f"{row[EFFICIENCY]:.3f} | {row[AFFINITY]:.2f} |"
         )
     return lines
 
 
+def _box_basis() -> dict:
+    wide = _load_json("pocket_definition.json")
+    tight = _load_json("tight_pocket_definition.json")
+    speb = _load_json("speb_pocket_definition.json")
+    return {
+        "wide": f"{wide['minimum_box_size_angstrom']:.0f} A receptor-preparation boxes",
+        "tight": tight["basis"],
+        "speb": speb["pockets"][0]["box_basis"],
+    }
+
+
+def _fmt_ci(block: dict) -> str:
+    ci = block["bootstrap_mean_difference_custom_minus_fda"]
+    return f"[{ci['ci95_low']:.2f}, {ci['ci95_high']:.2f}]"
+
+
 def main() -> None:
-    wide = json.loads(WIDE.read_text(encoding="utf-8"))
-    tight = json.loads(TIGHT.read_text(encoding="utf-8"))
-    speb = json.loads(SPEB.read_text(encoding="utf-8"))
-    boron = json.loads(BORON.read_text(encoding="utf-8"))
+    population = load_analysis_population(PROJECT_ROOT)
+    wide = population.manifests["wide"]
+    tight = population.manifests["tight"]
+    speb = population.manifests["speb"]
+    boron = population.manifests["boron"]
     validate_campaign_manifest_set((wide, tight, speb, boron))
     seal = require_campaign_seal(PROJECT_ROOT, str(wide["campaign_id"]))
-    stats = json.loads(STATS.read_text(encoding="utf-8"))
+    stats = _stats(population)
     if (
         stats.get("campaign_id") != seal["campaign_id"]
-        or stats.get("campaign_ledger_content_sha256")
-        != seal["ledger_content_sha256"]
+        or stats.get("campaign_ledger_content_sha256") != seal["ledger_content_sha256"]
     ):
         raise DockingError("Docking statistics do not match the sealed campaign.")
 
-    ws, ts = _set_stats(wide), _set_stats(tight)
-    charged = sum(1 for r in wide["ligand_preparation"] if r["formal_charge"] != 0)
-    stereo = [r["ligand_id"] for r in wide["ligand_preparation"] if r["undefined_stereocenter_count"]]
+    library = _load_json("compound_library.json")
+    boxes = _box_basis()
+    wide_meta = wide["metadata"]
+    sw = wide["software_versions"]
+    wide_pop = population.populations["wide"]
+    tight_pop = population.populations["tight"]
+    charged_entities = sorted(
+        {
+            row["entity_id"]
+            for row in wide["ligand_preparation"]
+            if int(row["formal_charge"]) != 0
+        }
+    )
+    stereo = sorted(
+        {
+            row["entity_id"]
+            for row in wide["ligand_preparation"]
+            if int(row["undefined_stereocenter_count"]) > 0
+        }
+    )
+
+    ws = stats["custom_vs_fda_wide_box"]
+    ts = stats["custom_vs_fda_tight_box"]
+    pc = stats["speb_positive_control"]
+    primary = pc["primary_ambiguous_excluded"]
+    sensitivity = pc["sensitivity_dual_state_collapsed"]
+    assignment = stats["full_valid_fit_fda_population_sensitivity"]
+    worst = stats["vancomycin_worst_rank_sensitivity"]
 
     lines = [
         "# Docking Methods And Results Note",
@@ -90,87 +128,126 @@ def main() -> None:
         "",
         "## Pipeline",
         "",
-        "SMILES (PubChem) -> desalt -> protonate to the dominant microspecies at pH "
-        f"{wide['protonation_ph']} ({wide['protonation_tool']}) -> RDKit ETKDGv3 (seed "
-        f"{wide['seed']}) 3D -> MMFF94 -> Meeko `mk_prepare_ligand` -> {wide['vina_version']} "
-        f"(exhaustiveness {wide['exhaustiveness']}, {wide['num_modes']} modes, seed {wide['seed']}) "
-        "over the 5XYA + 7EDD ensemble -> ligand-efficiency ranking -> per-residue "
-        "catalytic-triad interaction analysis.",
+        "SMILES (PubChem) -> desalt -> assign pH 7.4 species from the preregistered pKa "
+        "rule set -> RDKit ETKDGv3 3D -> MMFF94 -> Meeko `mk_prepare_ligand` -> "
+        f"{sw['vina']} (exhaustiveness {wide_meta['exhaustiveness']}, {wide_meta['num_modes']} modes, "
+        f"seed {wide_meta['seed']}, timeout {wide_meta['timeout_seconds']:.0f} s) over the 5XYA + 7EDD "
+        "ensemble -> ligand-efficiency ranking -> per-residue catalytic-triad interaction analysis.",
         "",
-        f"Ligands are docked as their charge state at pH 7.4, not as the neutral PubChem "
-        f"depiction: {charged} of {len(wide['ligand_preparation'])} prepared compounds carry a formal "
+        f"The design library contains {library['compound_count']} compounds: "
+        f"{library['counts_by_set']['custom_anti_virulence']} custom chemotypes and "
+        f"{library['counts_by_set']['fda_comparator']} FDA comparators. Four FDA comparators "
+        "(amoxicillin, ampicillin, cephalexin and lisinopril) have no established dominant "
+        "state at pH 7.4, so both plausible states were docked and those entities are excluded "
+        "from primary set-level statistics.",
+        "",
+        f"{len(charged_entities)} of {len(wide['ligand_preparation'])} prepared species carry a formal "
         "charge. The custom set is dominated by amidines and guanidines, which are cations at "
-        "physiological pH; the S1 salt bridge is their entire binding rationale.",
+        "physiological pH; the S1 salt bridge is their binding rationale.",
         "",
-        "Two search boxes were used: the wide receptor-preparation box, and a tight box centred on "
-        "the D151/H279/S617 **side-chain** centroid (`tight_pocket_definition.json`).",
+        f"Two SpyCEP search boxes were used: {boxes['wide']}, and a tight box based on {boxes['tight']}.",
         "",
         "## Full-library result (wide box)",
         "",
-        f"- Compounds docked: {wide['compounds_docked']}/{wide['compounds_input']}. "
-        f"Preparation failures: {len(wide['prep_failures'])}; docking failures: {len(wide['dock_failures'])}.",
-        f"- Affinity range: {ws['range'][0]:.2f} to {ws['range'][1]:.2f} kcal/mol.",
-        f"- Custom (n={ws['custom_n']}) vs FDA (n={ws['fda_n']}) mean best affinity: "
-        f"{ws['custom_best']:.2f} vs {ws['fda_best']:.2f} kcal/mol.",
-        f"- Custom vs FDA mean ligand efficiency: {ws['custom_le']:.3f} vs {ws['fda_le']:.3f}.",
+        f"- Attempted population: {len(wide_pop.attempted)} entities; valid-fit population: "
+        f"{len(wide_pop.valid_fit)} entities; numeric analysis population: "
+        f"{len(wide_pop.numeric_analysis)} entities ({ws['best_affinity']['custom_n']} custom, "
+        f"{ws['best_affinity']['fda_n']} FDA).",
+        f"- Non-fits excluded from numeric means/tests: {', '.join(wide_pop.non_fits_excluded)}.",
+        f"- Custom vs FDA mean best affinity: {ws['best_affinity']['custom_mean']:.2f} vs "
+        f"{ws['best_affinity']['fda_mean']:.2f} kcal/mol; CI "
+        f"{_fmt_ci(ws['best_affinity'])}; Mann-Whitney p = {ws['best_affinity']['mann_whitney']['p_value']:.3f}.",
+        f"- Custom vs FDA mean ligand efficiency: {ws['ligand_efficiency']['custom_mean']:.3f} vs "
+        f"{ws['ligand_efficiency']['fda_mean']:.3f}; CI {_fmt_ci(ws['ligand_efficiency'])}; "
+        f"Mann-Whitney p = {ws['ligand_efficiency']['mann_whitney']['p_value']:.3f}.",
         "",
-        "Top 10 by ligand efficiency:",
+        "Top 10 by ligand efficiency in the primary numeric population:",
         "",
-        *_top_rows(wide),
+        *_top_rows(wide, wide_pop),
         "",
         "## Tight triad-centred box (robustness check)",
         "",
-        f"- Compounds docked: {tight['compounds_docked']}/{tight['compounds_input']}.",
-        f"- Custom (n={ts['custom_n']}) vs FDA (n={ts['fda_n']}) mean best affinity: "
-        f"{ts['custom_best']:.2f} vs {ts['fda_best']:.2f} kcal/mol "
-        "(non-fits with non-negative affinity are excluded).",
-        f"- Custom vs FDA mean ligand efficiency: {ts['custom_le']:.3f} vs {ts['fda_le']:.3f}.",
+        f"- Attempted population: {len(tight_pop.attempted)} entities; valid-fit population: "
+        f"{len(tight_pop.valid_fit)} entities; numeric analysis population: "
+        f"{len(tight_pop.numeric_analysis)} entities ({ts['best_affinity']['custom_n']} custom, "
+        f"{ts['best_affinity']['fda_n']} FDA).",
+        f"- Custom vs FDA mean best affinity: {ts['best_affinity']['custom_mean']:.2f} vs "
+        f"{ts['best_affinity']['fda_mean']:.2f} kcal/mol; CI "
+        f"{_fmt_ci(ts['best_affinity'])}; Mann-Whitney p = {ts['best_affinity']['mann_whitney']['p_value']:.3f}.",
+        f"- Custom vs FDA mean ligand efficiency: {ts['ligand_efficiency']['custom_mean']:.3f} vs "
+        f"{ts['ligand_efficiency']['fda_mean']:.3f}; CI {_fmt_ci(ts['ligand_efficiency'])}; "
+        f"Mann-Whitney p = {ts['ligand_efficiency']['mann_whitney']['p_value']:.3f}.",
         "",
         "## Catalytic-triad engagement",
         "",
-        "Counted per ligand (best receptor), not per ligand-by-receptor pose row:",
+        "Counted per entity over the affinity-best receptor. Vancomycin is retained as a "
+        "zero-contact non-fit in the 69-entity analysis-eligible denominator.",
         "",
-        "| Box | ≥1 triad residue | ≥2 residues | all 3 residues |",
+        "| Box | >=1 triad residue | >=2 residues | all 3 residues |",
         "| --- | --- | --- | --- |",
     ]
     for key, label in (("triad_engagement_wide_box", "Wide"), ("triad_engagement_tight_box", "Tight")):
-        t = stats[key]
+        triad = stats[key]
         lines.append(
-            f"| {label} | {t['contacting_at_least_one_triad_residue']}/{t['ligands']} | "
-            f"{t['contacting_at_least_two_triad_residues']}/{t['ligands']} | "
-            f"{t['contacting_all_three_triad_residues']}/{t['ligands']} |"
+            f"| {label} | {triad['contacting_at_least_one_triad_residue']}/{triad['ligands']} | "
+            f"{triad['contacting_at_least_two_triad_residues']}/{triad['ligands']} | "
+            f"{triad['contacting_all_three_triad_residues']}/{triad['ligands']} |"
         )
 
-    pc = stats["speb_positive_control"]
     lines += [
         "",
         "## SpeB positive control",
         "",
-        f"- Box: {speb['box_basis']}.",
-        f"- Decoys: {pc['decoy_count']}, size-matched to Q9D "
-        f"({pc['positive_heavy_atom_count']} heavy atoms; decoys {pc['decoy_heavy_atom_range'][0]}-"
-        f"{pc['decoy_heavy_atom_range'][1]}).",
-        f"- By best affinity: Q9D {pc['by_best_affinity']['positive_affinity']:.2f} kcal/mol, "
-        f"best decoy {pc['by_best_affinity']['best_decoy_affinity']:.2f}; "
-        f"beats all decoys: {pc['by_best_affinity']['beats_all_decoys']}.",
-        f"- By ligand efficiency: Q9D {pc['by_ligand_efficiency']['positive_affinity']:.3f}, "
-        f"best decoy {pc['by_ligand_efficiency']['best_decoy_affinity']:.3f}; "
-        f"beats all decoys: {pc['by_ligand_efficiency']['beats_all_decoys']}.",
-        f"- **Passes on both metrics: {pc['passes_on_both_metrics']}.**",
+        f"- Box: {boxes['speb']}.",
+        f"- Design panel: 17 decoy entities size-matched to Q9D plus two protease comparators "
+        f"outside the rank denominator ({', '.join(pc['comparators_outside_rank_denominator'])}).",
+        f"- Primary population: {primary['decoy_count']} single-state decoys; excluded ambiguous "
+        f"decoys: {', '.join(primary['excluded_entity_ids'])}.",
+        f"- By best affinity: Q9D {primary['by_best_affinity']['positive']:.3f} kcal/mol, "
+        f"best decoy {primary['by_best_affinity']['best_decoy']:.3f}; rank "
+        f"{primary['by_best_affinity']['rank']}/{primary['rank_denominator']}; "
+        f"margin {primary['by_best_affinity']['margin_to_best_decoy']:.3f}.",
+        f"- By ligand efficiency: Q9D {primary['by_ligand_efficiency']['positive']:.3f}, "
+        f"best decoy {primary['by_ligand_efficiency']['best_decoy']:.3f}; rank "
+        f"{primary['by_ligand_efficiency']['rank']}/{primary['rank_denominator']}; "
+        f"margin {primary['by_ligand_efficiency']['margin_to_best_decoy']:.3f}.",
+        f"- Collapsed sensitivity: {sensitivity['decoy_count']} decoys, Q9D rank "
+        f"{sensitivity['by_best_affinity']['rank']}/{sensitivity['rank_denominator']} by affinity "
+        f"and {sensitivity['by_ligand_efficiency']['rank']}/{sensitivity['rank_denominator']} by "
+        f"ligand efficiency; affinity margin "
+        f"{sensitivity['by_best_affinity']['margin_to_best_decoy']:.3f}.",
+        f"- Passes on both primary metrics: {primary['passes_on_both_metrics']}.",
+        "",
+        "## Ambiguous-state and non-fit sensitivities",
+        "",
+        f"- The full valid-fit FDA sensitivity enumerates {assignment['wide_box']['assignment_count']} "
+        "one-state-per-ambiguous-entity assignments over 54 FDA comparators. Affinity p-value "
+        f"ranges are {assignment['wide_box']['best_affinity']['mann_whitney_p_value_range'][0]:.3f}-"
+        f"{assignment['wide_box']['best_affinity']['mann_whitney_p_value_range'][1]:.3f} wide and "
+        f"{assignment['tight_box']['best_affinity']['mann_whitney_p_value_range'][0]:.3f}-"
+        f"{assignment['tight_box']['best_affinity']['mann_whitney_p_value_range'][1]:.3f} tight.",
+        f"- Ligand-efficiency p-value ranges are "
+        f"{assignment['wide_box']['ligand_efficiency']['mann_whitney_p_value_range'][0]:.3f}-"
+        f"{assignment['wide_box']['ligand_efficiency']['mann_whitney_p_value_range'][1]:.3f} wide and "
+        f"{assignment['tight_box']['ligand_efficiency']['mann_whitney_p_value_range'][0]:.3f}-"
+        f"{assignment['tight_box']['ligand_efficiency']['mann_whitney_p_value_range'][1]:.3f} tight.",
+        f"- Worst-rank vancomycin sensitivity keeps synthetic values out of means/CIs. "
+        f"Affinity p-values are {worst['wide_box']['best_affinity']['mann_whitney']['p_value']:.3f} "
+        f"wide and {worst['tight_box']['best_affinity']['mann_whitney']['p_value']:.3f} tight; "
+        f"ligand-efficiency p-values are "
+        f"{worst['wide_box']['ligand_efficiency']['mann_whitney']['p_value']:.3f} wide and "
+        f"{worst['tight_box']['ligand_efficiency']['mann_whitney']['p_value']:.3f} tight.",
         "",
     ]
 
-    best = min(boron["results"], key=lambda r: r["best_affinity_kcal_mol"])
+    best = min(boron["results"], key=lambda row: row["best_affinity_kcal_mol"])
     lines += [
         "## Boron gem-diol surrogates",
         "",
-        f"- {boron['method']}",
-        f"- Best surrogate: {best['parent_ligand_id']} at {best['best_affinity_kcal_mol']:.2f} kcal/mol "
+        f"- {boron['metadata']['method']}",
+        f"- Best surrogate: {best['source_parent_entity_id']} at {best['best_affinity_kcal_mol']:.2f} kcal/mol "
         f"({best['pocket_id']}). Approximation only; see `boron_surrogate_result.json`.",
         "",
-    ]
-
-    lines += [
         "## Limitations",
         "",
         "- Predictions are not evidence of inhibition or efficacy; no therapeutic claim is made.",
@@ -178,11 +255,12 @@ def main() -> None:
         "- Boron compounds have no MMFF94 or Vina parameters and are handled only as gem-diol surrogates.",
         "- Rigid-receptor, single-conformer docking ignores protein flexibility.",
         "- Custom positives are general protease motifs, not validated SpyCEP binders.",
-        f"- {len(stereo)} compounds carry an unspecified stereocentre that ETKDG assigned arbitrarily "
+        "- Vancomycin is a real non-fit outcome in both SpyCEP boxes and is absent from mean-based comparisons.",
+        f"- {len(stereo)} entities carry an unspecified stereocentre that ETKDG assigned arbitrarily "
         f"({', '.join(stereo)}); the docked isomer is recorded as `embedded_isomeric_smiles`.",
         "",
     ]
-    OUTPUT.write_text("\n".join(lines), encoding="utf-8")
+    OUTPUT.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"Wrote {OUTPUT.relative_to(PROJECT_ROOT)}")
 
 
