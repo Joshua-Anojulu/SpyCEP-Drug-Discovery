@@ -1,34 +1,35 @@
 # Handoff state — SpyCEP Drug Discovery
 
-_Last updated 2026-07-20 by Claude, after committing + pushing the species-exclusion build._
+_Last updated 2026-07-20 by Claude, after completing PLAN-species-exclusion end to end._
 _Supersedes `RESUME-campaign3.md`, which is stale (it predates campaign 3 completing)._
 
 ## One-paragraph situation
 
 Campaign `v2_20260719` ran to completion and is **sealed and immutable**. The set-level statistics
 computed from it were pseudo-replicated; `PLAN-species-exclusion.md` (Codex-APPROVED, round 6) is the
-correction, and it is now **implemented, verified and pushed** as commit `27a0167` on
-`remediation-2026-07-13`. The only outstanding work from that plan is **§4, the manuscript rewrite**,
-which has not been started. One decision is open and is Josh's to make (triad framing, below).
+correction, and it is now **complete — all six sections implemented, verified and pushed**. The build
+landed as `27a0167` and the §4 manuscript rewrite as `978b456`, both on `remediation-2026-07-13`.
+Nothing from that plan is outstanding. **The next move is a fresh read of the manuscript by Josh**,
+since the triad framing changed and several headline numbers moved.
 
 ## Where things stand
 
 | Item | State |
 |---|---|
 | Branch | `remediation-2026-07-13`, pushed, in sync with origin |
-| HEAD | `27a0167` Implement entity-level population construction |
+| HEAD | `978b456` Correct manuscript claims falsified by the recomputation |
 | Campaign | `v2_20260719` sealed 2026-07-19 12:26; `spawn_retry_claim_count` 0 |
 | Test suite | 270 passing |
 | `compute_statistics.py` | byte-identical on rerun (idempotent) |
 | Figures | all four regenerate in one run |
-| Manuscript | **NOT updated — known-false, see below** |
+| Manuscript | **updated and cross-checked against `docking_statistics.json`** |
 
-## PLAN-species-exclusion.md progress
+## PLAN-species-exclusion.md progress — COMPLETE
 
 - §1 shared population module (`src/spycep_drug_discovery/analysis_population.py`) — **done**
 - §2 `compute_statistics.py` consumes it — **done**
 - §3 `make_figures.py` + `write_docking_methods.py` consume it — **done**
-- §4 **manuscript rewrite — NOT STARTED**
+- §4 manuscript rewrite — **done** (`978b456`)
 - §5 tests (golden + corruption) — **done**
 - §6 verify (suite green, idempotent, one-run figures) — **done**
 
@@ -45,39 +46,28 @@ Populations: `attempted` 73, `valid_fit` 72, `analysis_eligible` 69 (triad), `nu
 
 The positive control still fails. The correction sharpens the null; it does not rescue the pipeline.
 
-## OPEN DECISION — Josh's call, blocks §4
+## RESOLVED DECISION — triad framing (Josh, 2026-07-20)
 
-The plan flags this explicitly: *"Josh should see this before sign-off."*
+The plan flagged this as needing Josh's sight before sign-off, and it was put to him directly.
 
-Manuscript line 59 currently claims **"Every docked compound contacts at least one triad residue
-(73 of 73 wide, 72 of 72 tight), and 42 of 73 contact all three."** Under correct affinity-best-receptor
-counting this is **false**: wide is 62 of 69 (90%), tight 68 of 69 (99%), and all-three is 31 of 69
-(45%) in both boxes — not 42/47.
+**Decision: correct the numbers, keep the argument.** §3 now reports 62/51/31 wide and 68/56/31 tight
+over the 69-entity denominator, retires the false universal-contact claim, and softens the compact-site
+conclusion from "carries no signal" to "carries little signal". The argument survives.
 
-The "triad contact does not discriminate" argument partly rested on contact being *universal*. It no
-longer is in the wide box, and the all-three rate is now under half. The conclusion probably survives
-on the compact-site reasoning, but the sentence and possibly the argument need rewriting, and that is
-a scientific framing choice, not a mechanical number swap.
+**Also decided: note the amidine chemistry.** Four of the six zero-contact compounds
+(4-aminobenzamidine, benzamidine, DCI, caffeine) are 9–14 heavy-atom fragments; the amidines occupy the
+S1 specificity pocket rather than the triad, so absent triad contact reflects binding mode and not a
+failed pose. This is now stated in §3.
 
-## §4 known-false manuscript claims (from the plan)
+**Deliberately NOT reported — available if wanted.** The arm-level split was computed and is real:
+in the wide box 83% of custom versus 94% of FDA contact ≥1 residue (56% vs 82% for ≥2); the tight box
+is 100% for both. It would strengthen the null — the rational chemotypes do not engage the triad
+preferentially — but it is a **new comparison outside the approved plan**, post-hoc and unpreregistered.
+Josh chose to leave it out. Adding it later should go through its own review round.
 
-- **Abstract** — "6th of 20 / 7th of 20"; p = 0.32/0.26; the claim that every ligand is docked as its
-  dominant microspecies (four are not). "55 comparators" and "17 decoys" stay, but qualified.
-- **§2.3** — must name the four excluded entities (cephalexin, ampicillin, amoxicillin, lisinopril),
-  the pKₐ rationale and the exclusion rule.
-- **§2.4** — vancomycin exhausts the 1800 s ceiling against **both** boxes; the earlier wide-box pose
-  was accepted past the ceiling under a suspend-extensible timeout and is superseded.
-- **§2.6** — still implies 17 decoys are the primary analysis (primary is now 14).
-- **§2.7** — claims best-receptor triad counting the code did not implement.
-- **§3** — docked counts, means, CIs, p-values, triad counts, "67th of 73" (benzamidine re-ranks to
-  63/68), and the unsupported historical "55–56 was a 146-row pose count" claim.
-- **Discussion** — "Q9D trails two β-lactams" holds only in the sensitivity analysis.
-- **Limitations** — vancomycin absent from **both** comparisons; "77 compounds and one pose each" false.
-  Line 86's "does not fit the 16 Å triad box" is wrong — it exhausts the ceiling in both boxes.
-
-**Sourcing rule (from the plan):** no number may be hand-edited from old values. Analysis numbers come
-from `docking_statistics.json`, design/method numbers from validated manifests, test count from a
-verified run.
+**Sourcing rule that was followed (from the plan):** no number was hand-edited from an old value.
+Analysis numbers came from `docking_statistics.json`, design/method numbers from validated manifests,
+the test count from a verified run.
 
 ## Constraints that always apply
 
@@ -86,6 +76,14 @@ verified run.
 - No fabricated compound data. Approval-gated repo.
 - Non-trivial changes run the grill → codex-review → codex-build chain. §4 is already covered by the
   approved plan, so it does not need a fresh chain.
+
+## Next moves
+
+1. **Josh reads the manuscript fresh.** The triad paragraph, the SpeB results and the abstract all
+   changed substantively. Nothing further should be built on it until that read happens.
+2. Consider whether the arm-level triad split (above) is worth a review round to include.
+3. Revert the two AC-only power settings (below).
+4. Decide when this branch merges — see `superpowers:finishing-a-development-branch`.
 
 ## Stale things to ignore
 
