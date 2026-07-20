@@ -16,8 +16,9 @@ since the triad framing changed and several headline numbers moved.
 
 | Item | State |
 |---|---|
-| Branch | `remediation-2026-07-13`, pushed, in sync with origin |
-| HEAD | `978b456` Correct manuscript claims falsified by the recomputation |
+| Branch | **merged to `master`** 2026-07-20; `master` and `remediation-2026-07-13` both at `1e825fa`, pushed |
+| HEAD | `1e825fa` Correct README headline numbers and retire the stale status banner |
+| Pre-merge `master` | `0cbc255` — recovery point if the merge ever needs undoing (`git reset --hard 0cbc255`) |
 | Campaign | `v2_20260719` sealed 2026-07-19 12:26; `spawn_retry_claim_count` 0 |
 | Test suite | 270 passing |
 | `compute_statistics.py` | byte-identical on rerun (idempotent) |
@@ -77,13 +78,26 @@ the test count from a verified run.
 - Non-trivial changes run the grill → codex-review → codex-build chain. §4 is already covered by the
   approved plan, so it does not need a fresh chain.
 
+## Merge to master (2026-07-20)
+
+`master` was 19 commits behind and still held the pre-remediation study, whose README and abstract
+claimed the SpeB control **passed** by 4.4 SD and that this "confirms the SpyCEP result reflects the
+target rather than a failure of the method" — the claim the remediation invalidated. That result came
+from a box built from Q9D's own coordinates and seven decoys averaging half its heavy-atom count.
+Josh chose to fast-forward rather than leave it as the repo default. Recovery point is `0cbc255`.
+
 ## Next moves
 
 1. **Josh reads the manuscript fresh.** The triad paragraph, the SpeB results and the abstract all
-   changed substantively. Nothing further should be built on it until that read happens.
+   changed substantively. This is now the canonical version on `master`, so a disagreement means a
+   follow-up commit rather than a blocked merge.
 2. Consider whether the arm-level triad split (above) is worth a review round to include.
-3. Revert the two AC-only power settings (below).
-4. Decide when this branch merges — see `superpowers:finishing-a-development-branch`.
+3. Revert the two AC-only power settings (below) — still owed.
+4. Deferred and still open: Codex finding 15 — a bootstrap CI over a fixed curated library is not
+   population inference and a non-significant Mann-Whitney is not equivalence. The manuscript now
+   states this as a limitation rather than restructuring its inferential framing. Doing it properly
+   (equivalence testing, say) would be new statistics on the same sealed data — no re-docking — and
+   is a separate decision.
 
 ## Stale things to ignore
 
